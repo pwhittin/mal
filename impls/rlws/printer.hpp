@@ -5,7 +5,7 @@
 #include <utility>
 #include "types.hpp"
 
-auto SequenceTokens = [](const auto type)
+static const auto SequenceTokens = [](const auto type)
 {
     switch (type)
     {
@@ -19,6 +19,29 @@ auto SequenceTokens = [](const auto type)
     return std::pair<types::S, types::S>{"", ""}; // quiets compiler warning
 };
 
+static const auto ExpandGeneric =
+    [](const types::S& s, const types::S& expandSequence, const types::S& replaceSequence)
+{
+    auto answer{std::string{""}};
+    auto lastIndex{std::size_t{0}};
+    auto nextIndex{s.find(expandSequence, lastIndex)};
+    while (std::string::npos != nextIndex)
+    {
+        auto numberOfCharactersBeforeExpandSequence{(nextIndex - lastIndex)};
+        answer.append(s, lastIndex, numberOfCharactersBeforeExpandSequence);
+        answer.append(replaceSequence);
+        lastIndex += numberOfCharactersBeforeExpandSequence + expandSequence.length();
+        nextIndex = s.find(expandSequence, lastIndex);
+    }
+    answer.append(s, lastIndex);
+    return answer;
+};
+static const auto ExpandDoubleQuote = [](const auto& s) { return ExpandGeneric(s, "\"", "\\\""); };
+static const auto ExpandNewline = [](const auto& s) { return ExpandGeneric(s, "\n", "\\n"); };
+static const auto ExpandBackslash = [](const auto& s) { return ExpandGeneric(s, "\\", "\\\\"); };
+
+static const auto ExpandString = [](const auto& s) { return ExpandDoubleQuote(ExpandNewline(ExpandBackslash(s))); };
+
 namespace printer
 {
 
@@ -31,7 +54,7 @@ types::S PrintStr(const types::RLWSType& rlwsType)
         result = std::to_string(std::get<types::I>(rlwsType.value));
         break;
     case types::RLWSTypes::RLWS_STRING:
-        result = "\"" + std::get<types::S>(rlwsType.value) + "\"";
+        result = "\"" + ExpandString(std::get<types::S>(rlwsType.value)) + "\"";
         break;
     case types::RLWSTypes::RLWS_SYMBOL:
         result = std::get<types::S>(rlwsType.value);

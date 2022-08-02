@@ -9,12 +9,18 @@
 namespace types
 {
 
+static const auto DEREF_TOKEN{"@"};
 static const auto LIST_TOKEN_END{")"};
 static const auto LIST_TOKEN_START{"("};
 static const auto MAP_TOKEN_END{"}"};
 static const auto MAP_TOKEN_START{"{"};
+static const auto META_TOKEN{"^"};
+static const auto QUASI_QUOTE_TOKEN{"`"};
+static const auto QUOTE_TOKEN{"'"};
+static const auto SPLICE_UNQUOTE_TOKEN{"~@"};
 static const auto STRING_CHARACTER_DELIMITER{'"'};
 static const auto STRING_TOKEN_DELIMITER{"\""};
+static const auto UNQUOTE_TOKEN{"~"};
 static const auto VECTOR_TOKEN_END{"]"};
 static const auto VECTOR_TOKEN_START{"["};
 
