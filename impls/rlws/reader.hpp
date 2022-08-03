@@ -18,8 +18,8 @@ using TokenStrings = std::vector<types::S>;
 
 struct Tokens
 {
-    TokenIndex tokenIndex;
-    TokenStrings tokenStrings;
+    TokenIndex tokenIndex{0};
+    TokenStrings tokenStrings{};
 };
 
 static const auto Tokenize = [](const auto& s, const auto& re)
@@ -28,7 +28,6 @@ static const auto Tokenize = [](const auto& s, const auto& re)
     static const auto CurrentToken = [](const auto& reIt) { return (*reIt)[1].str(); }; // [1] only group match
     auto reIt{std::sregex_iterator(s.begin(), s.end(), re)};
     auto tokens{Tokens{}};
-    tokens.tokenIndex = 0;
     while (NO_MORE_TOKENS != reIt)
         tokens.tokenStrings.push_back(CurrentToken(reIt++));
     return tokens;
