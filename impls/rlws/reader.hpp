@@ -210,24 +210,24 @@ static constexpr auto SpliceUnquoteReaderMacroFn = [](Tokens& tokens)
 static constexpr auto UnquoteReaderMacroFn = [](Tokens& tokens)
 { GenericReaderMacroFn(tokens, "expected form after 'unquote', got EOF", "unquote"); };
 
+using ReaderMacroFnMap = std::unordered_map<S, ReaderMacroFn>;
+static const auto TokenToReaderMacroFn{ReaderMacroFnMap{{T::DEREF_TOKEN, DerefReaderMacroFn},
+                                                        {T::META_TOKEN, MetaReaderMacroFn},
+                                                        {T::QUASI_QUOTE_TOKEN, QuasiQuoteReaderMacroFn},
+                                                        {T::QUOTE_TOKEN, QuoteReaderMacroFn},
+                                                        {T::SPLICE_UNQUOTE_TOKEN, SpliceUnquoteReaderMacroFn},
+                                                        {T::UNQUOTE_TOKEN, UnquoteReaderMacroFn}}};
+static const auto READERMACROFN_NOT_FOUND{TokenToReaderMacroFn.end()};
+
+static constexpr auto NotFoundReaderMacroFn{nullptr};
 static constexpr auto IsReaderMacro = [](const auto& token)
 {
     static constexpr auto Answer = [](const auto& isReaderMacro, const auto& readerMacroFn) {
         return std::pair<bool, ReaderMacroFn>{isReaderMacro, readerMacroFn};
     };
-    if (T::DEREF_TOKEN == token)
-        return Answer(true, DerefReaderMacroFn);
-    if (T::META_TOKEN == token)
-        return Answer(true, MetaReaderMacroFn);
-    if (T::QUASI_QUOTE_TOKEN == token)
-        return Answer(true, QuasiQuoteReaderMacroFn);
-    if (T::QUOTE_TOKEN == token)
-        return Answer(true, QuoteReaderMacroFn);
-    if (T::SPLICE_UNQUOTE_TOKEN == token)
-        return Answer(true, SpliceUnquoteReaderMacroFn);
-    if (T::UNQUOTE_TOKEN == token)
-        return Answer(true, UnquoteReaderMacroFn);
-    return Answer(false, nullptr);
+    auto readerMacroFnElement{TokenToReaderMacroFn.find(token)};
+    return (READERMACROFN_NOT_FOUND == readerMacroFnElement) ? Answer(false, NotFoundReaderMacroFn)
+                                                             : Answer(true, readerMacroFnElement->second);
 };
 
 static RT ReadForm(Tokens& tokens)
