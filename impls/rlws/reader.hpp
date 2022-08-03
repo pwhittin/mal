@@ -6,7 +6,6 @@
 #include <functional>
 #include <regex>
 #include <stdexcept>
-#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -136,18 +135,26 @@ static constexpr auto ReadSequence = [](auto& tokens, const auto& endToken, cons
     return result;
 };
 
+using SequenceValue = std::pair<S, RTS>;
+static const auto ListSequenceValue{SequenceValue{T::LIST_TOKEN_END, RTS::RLWS_LIST}};
+static const auto MapSequenceValue{SequenceValue{T::MAP_TOKEN_END, RTS::RLWS_MAP}};
+static const auto VectorSequenceValue{SequenceValue{T::VECTOR_TOKEN_END, RTS::RLWS_VECTOR}};
+
+using SequenceValueMap = std::unordered_map<S, SequenceValue>;
+static const auto TokenToSequenceValue{SequenceValueMap{{T::LIST_TOKEN_START, ListSequenceValue},
+                                                        {T::MAP_TOKEN_START, MapSequenceValue},
+                                                        {T::VECTOR_TOKEN_START, VectorSequenceValue}}};
+static const auto SEQUENCE_VALUE_NOT_FOUND{TokenToSequenceValue.end()};
+
+static const auto NotFoundSequenceValue{VectorSequenceValue};
 static constexpr auto IsSequenceStart = [](const auto& token)
 {
-    auto Answer = [](const auto& isSequenceStart, const auto& endToken, const auto& type) {
-        return std::tuple<bool, S, RTS>{isSequenceStart, endToken, type};
+    static constexpr auto Answer = [](const auto& isSequenceStart, const auto& sequenceValue) {
+        return std::pair<bool, SequenceValue>{isSequenceStart, sequenceValue};
     };
-    if (T::LIST_TOKEN_START == token)
-        return Answer(true, T::LIST_TOKEN_END, RTS::RLWS_LIST);
-    if (T::MAP_TOKEN_START == token)
-        return Answer(true, T::MAP_TOKEN_END, RTS::RLWS_MAP);
-    if (T::VECTOR_TOKEN_START == token)
-        return Answer(true, T::VECTOR_TOKEN_END, RTS::RLWS_VECTOR);
-    return Answer(false, "", RTS::RLWS_SYMBOL);
+    auto sequenceValueEntry{TokenToSequenceValue.find(token)};
+    return (SEQUENCE_VALUE_NOT_FOUND == sequenceValueEntry) ? Answer(false, NotFoundSequenceValue)
+                                                            : Answer(true, sequenceValueEntry->second);
 };
 
 using ReaderMacroFn = std::function<void(Tokens&)>;
@@ -225,9 +232,12 @@ static constexpr auto IsReaderMacro = [](const auto& token)
 
 static RT ReadForm(Tokens& tokens)
 {
-    auto [isSequenceStart, endToken, type]{IsSequenceStart(Peek(tokens))};
+    auto [isSequenceStart, sequenceValue]{IsSequenceStart(Peek(tokens))};
     if (isSequenceStart)
+    {
+        auto [endToken, type]{sequenceValue};
         return ReadSequence(tokens, endToken, type);
+    }
     auto [isReaderMacro, readerMacroFn]{IsReaderMacro(Peek(tokens))};
     if (isReaderMacro)
     {
