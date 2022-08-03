@@ -7,34 +7,39 @@
 
 static const auto SequenceTokens = [](const auto type)
 {
+    auto Answer = [](const auto& startToken, const auto& endToken) {
+        return std::pair<types::S, types::S>{startToken, endToken};
+    };
     switch (type)
     {
     case types::RLWSTypes::RLWS_LIST:
-        return std::pair<types::S, types::S>{types::LIST_TOKEN_START, types::LIST_TOKEN_END};
+        return Answer(types::LIST_TOKEN_START, types::LIST_TOKEN_END);
     case types::RLWSTypes::RLWS_MAP:
-        return std::pair<types::S, types::S>{types::MAP_TOKEN_START, types::MAP_TOKEN_END};
+        return Answer(types::MAP_TOKEN_START, types::MAP_TOKEN_END);
     case types::RLWSTypes::RLWS_VECTOR:
-        return std::pair<types::S, types::S>{types::VECTOR_TOKEN_START, types::VECTOR_TOKEN_END};
+        return Answer(types::VECTOR_TOKEN_START, types::VECTOR_TOKEN_END);
     }
-    return std::pair<types::S, types::S>{"", ""}; // quiets compiler warning
+    return Answer("", ""); // quiets compiler warning
 };
 
-static const auto ExpandGeneric =
-    [](const types::S& s, const types::S& expandSequence, const types::S& replaceSequence)
+static const auto ExpandGeneric = [](const types::S& s, const types::S& expandSequence, const types::S& replaceSequence)
 {
     auto answer{std::string{""}};
     auto lastIndex{std::size_t{0}};
-    auto nextIndex{s.find(expandSequence, lastIndex)};
-    while (std::string::npos != nextIndex)
+    while (true)
     {
-        auto numberOfCharactersBeforeExpandSequence{(nextIndex - lastIndex)};
+        auto nextIndex{s.find(expandSequence, lastIndex)};
+        auto expandSequenceNotFound{std::string::npos == nextIndex};
+        if (expandSequenceNotFound)
+        {
+            answer.append(s, lastIndex);
+            return answer;
+        }
+        auto numberOfCharactersBeforeExpandSequence{nextIndex - lastIndex};
         answer.append(s, lastIndex, numberOfCharactersBeforeExpandSequence);
         answer.append(replaceSequence);
         lastIndex += numberOfCharactersBeforeExpandSequence + expandSequence.length();
-        nextIndex = s.find(expandSequence, lastIndex);
     }
-    answer.append(s, lastIndex);
-    return answer;
 };
 static const auto ExpandDoubleQuote = [](const auto& s) { return ExpandGeneric(s, "\"", "\\\""); };
 static const auto ExpandNewline = [](const auto& s) { return ExpandGeneric(s, "\n", "\\n"); };
