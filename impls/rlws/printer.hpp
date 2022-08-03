@@ -1,6 +1,7 @@
 #ifndef PRINTER_H_
 #define PRINTER_H_
 
+#include <functional>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -68,22 +69,17 @@ static constexpr auto PrintASequence = [](const auto& rlwsType)
     return result;
 };
 
+using PrintFn = std::function<S(const RT&)>;
+using PrintFnMap = std::unordered_map<RTS, PrintFn>;
+static const auto RLWSTypeToPrintFn{PrintFnMap{{RTS::RLWS_INTEGER, PrintAnInteger},
+                                               {RTS::RLWS_LIST, PrintASequence},
+                                               {RTS::RLWS_MAP, PrintASequence},
+                                               {RTS::RLWS_STRING, PrintAString},
+                                               {RTS::RLWS_SYMBOL, PrintASymbol},
+                                               {RTS::RLWS_VECTOR, PrintASequence}}};
 static S PrintString(const RT& rlwsType)
 {
-    switch (rlwsType.type)
-    {
-    case RTS::RLWS_INTEGER:
-        return PrintAnInteger(rlwsType);
-    case RTS::RLWS_STRING:
-        return PrintAString(rlwsType);
-    case RTS::RLWS_SYMBOL:
-        return PrintASymbol(rlwsType);
-    case RTS::RLWS_LIST:
-    case RTS::RLWS_MAP:
-    case RTS::RLWS_VECTOR:
-        return PrintASequence(rlwsType);
-    }
-    return ""; // quite compiler warning
+    return RLWSTypeToPrintFn.find(rlwsType.type)->second(rlwsType);
 }
 
 namespace printer
