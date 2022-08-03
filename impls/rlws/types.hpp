@@ -15,6 +15,7 @@ static const auto LIST_TOKEN_START{"("};
 static const auto MAP_TOKEN_END{"}"};
 static const auto MAP_TOKEN_START{"{"};
 static const auto META_TOKEN{"^"};
+static constexpr auto NOT_FOUND{std::string::npos};
 static const auto QUASI_QUOTE_TOKEN{"`"};
 static const auto QUOTE_TOKEN{"'"};
 static const auto SPLICE_UNQUOTE_TOKEN{"~@"};

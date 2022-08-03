@@ -28,7 +28,7 @@ static constexpr auto ExpandGeneric = [](const S& s, const S& expandSequence, co
     while (true)
     {
         auto nextIndex{s.find(expandSequence, lastIndex)};
-        auto expandSequenceNotFound{std::string::npos == nextIndex};
+        auto expandSequenceNotFound{T::NOT_FOUND == nextIndex};
         if (expandSequenceNotFound)
         {
             answer.append(s, lastIndex);
