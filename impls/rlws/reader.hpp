@@ -22,10 +22,10 @@ struct Tokens
     TokenStrings tokenStrings{};
 };
 
-static const auto Tokenize = [](const auto& s, const auto& re)
+static constexpr auto Tokenize = [](const auto& s, const auto& re)
 {
     static const auto NO_MORE_TOKENS{std::sregex_iterator()};
-    static const auto CurrentToken = [](const auto& reIt) { return (*reIt)[1].str(); }; // [1] only group match
+    static constexpr auto CurrentToken = [](const auto& reIt) { return (*reIt)[1].str(); }; // [1] only group match
     auto reIt{std::sregex_iterator(s.begin(), s.end(), re)};
     auto tokens{Tokens{}};
     while (NO_MORE_TOKENS != reIt)
@@ -33,12 +33,17 @@ static const auto Tokenize = [](const auto& s, const auto& re)
     return tokens;
 };
 
-static const auto EMPTY_TOKEN{""};
-static const auto NoMoreTokens = [](const auto& tokens) { return (tokens.tokenIndex >= tokens.tokenStrings.size()); };
-static const auto CurrentToken = [](const auto& tokens) { return tokens.tokenStrings[tokens.tokenIndex]; };
-static const auto Peek = [](const auto& tokens) { return NoMoreTokens(tokens) ? EMPTY_TOKEN : CurrentToken(tokens); };
+static constexpr auto EMPTY_TOKEN{""};
 
-static const auto Next = [](auto& tokens)
+static constexpr auto NoMoreTokens = [](const auto& tokens)
+
+{ return (tokens.tokenIndex >= tokens.tokenStrings.size()); };
+static constexpr auto CurrentToken = [](const auto& tokens) { return tokens.tokenStrings[tokens.tokenIndex]; };
+
+static constexpr auto Peek = [](const auto& tokens)
+{ return NoMoreTokens(tokens) ? EMPTY_TOKEN : CurrentToken(tokens); };
+
+static constexpr auto Next = [](auto& tokens)
 {
     auto token{Peek(tokens)};
     if (EMPTY_TOKEN != token)
@@ -46,16 +51,16 @@ static const auto Next = [](auto& tokens)
     return token;
 };
 
-static const auto IsInteger = [](const auto& token)
+static constexpr auto IsInteger = [](const auto& token)
 {
     static const auto RE_INTEGER{RE{R"(-?\d+)"}};
     return std::regex_match(token, RE_INTEGER);
 };
 
-static const auto RLWSInteger = [](const auto& token)
+static constexpr auto RLWSInteger = [](const auto& token)
 { return types::RLWSType{.type = types::RLWSTypes::RLWS_INTEGER, .value = std::stoi(token)}; };
 
-static const auto IsString = [](const auto& token)
+static constexpr auto IsString = [](const auto& token)
 {
     static const auto RE_STRING{RE{R"("(?:\\.|[^\\"])*")"}};
     if ((0 == token.length()) or (types::STRING_CHARACTER_DELIMITER != token[0]))
@@ -65,7 +70,8 @@ static const auto IsString = [](const auto& token)
     throw std::invalid_argument("unbalanced string: '" + token + "'");
 };
 
-static const auto EscapeGeneric = [](const types::S& s, const types::S& escapeSequence, const types::S& replaceSequence)
+static constexpr auto EscapeGeneric =
+    [](const types::S& s, const types::S& escapeSequence, const types::S& replaceSequence)
 {
     auto answer{std::string{""}};
     auto lastIndex{std::size_t{0}};
@@ -84,21 +90,24 @@ static const auto EscapeGeneric = [](const types::S& s, const types::S& escapeSe
         lastIndex += numberOfCharactersBeforeEscapeSequence + escapeSequence.length();
     }
 };
-static const auto EscapeDoubleQuote = [](const auto& s) { return EscapeGeneric(s, "\\\"", "\""); };
-static const auto EscapeNewline = [](const auto& s) { return EscapeGeneric(s, "\\n", "\n"); };
-static const auto EscapeBackslash = [](const auto& s) { return EscapeGeneric(s, "\\\\", "\\"); };
+static constexpr auto EscapeDoubleQuote = [](const auto& s) { return EscapeGeneric(s, "\\\"", "\""); };
+static constexpr auto EscapeNewline = [](const auto& s) { return EscapeGeneric(s, "\\n", "\n"); };
+static constexpr auto EscapeBackslash = [](const auto& s) { return EscapeGeneric(s, "\\\\", "\\"); };
 
-static const auto RLWSString = [](const auto& token)
+static constexpr auto ReplaceEscapes = [](const auto& s)
+{ return EscapeDoubleQuote(EscapeNewline(EscapeBackslash(s))); };
+
+static constexpr auto RLWSString = [](const auto& token)
 {
     auto stringBody{token.substr(1, token.length() - 2)};
-    auto s{EscapeDoubleQuote(EscapeNewline(EscapeBackslash(stringBody)))};
-    return types::RLWSType{.type = types::RLWSTypes::RLWS_STRING, .value = s};
+    auto value{ReplaceEscapes(stringBody)};
+    return types::RLWSType{.type = types::RLWSTypes::RLWS_STRING, .value = value};
 };
 
-static const auto RLWSSymbol = [](const auto& token)
+static constexpr auto RLWSSymbol = [](const auto& token)
 { return types::RLWSType{.type = types::RLWSTypes::RLWS_SYMBOL, .value = token}; };
 
-static const auto ReadAtom = [](auto& tokens)
+static constexpr auto ReadAtom = [](auto& tokens)
 {
     auto token{Peek(tokens)};
     return IsInteger(token)  ? RLWSInteger(Next(tokens))
@@ -107,7 +116,7 @@ static const auto ReadAtom = [](auto& tokens)
 };
 
 static types::RLWSType ReadForm(Tokens& tokens);
-static const auto ReadSequence = [](auto& tokens, const auto& endToken, const types::RLWSTypes type)
+static constexpr auto ReadSequence = [](auto& tokens, const auto& endToken, const types::RLWSTypes type)
 {
     Next(tokens); // eat sequence start token
     auto result{types::RLWSType{}};
@@ -121,7 +130,7 @@ static const auto ReadSequence = [](auto& tokens, const auto& endToken, const ty
     return result;
 };
 
-static const auto IsSequenceStart = [](const auto& token)
+static constexpr auto IsSequenceStart = [](const auto& token)
 {
     auto Answer = [](const auto& isSequenceStart, const auto& endToken, const auto& type) {
         return std::tuple<bool, types::S, types::RLWSTypes>{isSequenceStart, endToken, type};
@@ -137,7 +146,7 @@ static const auto IsSequenceStart = [](const auto& token)
 
 using ReaderMacroFn = std::function<void(Tokens&)>;
 
-static const auto InsertTokens = [](auto& tokens, const auto& insertTokens)
+static constexpr auto InsertTokens = [](auto& tokens, const auto& insertTokens)
 {
     tokens.tokenStrings.insert(tokens.tokenStrings.begin() + tokens.tokenIndex,
                                insertTokens.tokenStrings.begin(),
@@ -145,7 +154,7 @@ static const auto InsertTokens = [](auto& tokens, const auto& insertTokens)
 };
 
 static const auto RE_TOKEN{RE{R"([\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"`,;)]*))"}};
-static const auto GenericReaderMacroFn = [](auto& tokens, const auto& errorMessage, const auto& fnName)
+static constexpr auto GenericReaderMacroFn = [](auto& tokens, const auto& errorMessage, const auto& fnName)
 {
     Next(tokens); // eat the reader macro token
     auto nextForm{ReadForm(tokens)};
@@ -157,10 +166,10 @@ static const auto GenericReaderMacroFn = [](auto& tokens, const auto& errorMessa
     InsertTokens(tokens, insertTokens);
 };
 
-static const auto DerefReaderMacroFn = [](Tokens& tokens)
+static constexpr auto DerefReaderMacroFn = [](Tokens& tokens)
 { GenericReaderMacroFn(tokens, "expected form after 'deref', got EOF", "deref"); };
 
-static const auto MetaReaderMacroFn = [](Tokens& tokens)
+static constexpr auto MetaReaderMacroFn = [](Tokens& tokens)
 {
     Next(tokens); // eat the deref token
     auto metaForm{ReadForm(tokens)};
@@ -176,21 +185,21 @@ static const auto MetaReaderMacroFn = [](Tokens& tokens)
     InsertTokens(tokens, insertTokens);
 };
 
-static const auto QuasiQuoteReaderMacroFn = [](Tokens& tokens)
+static constexpr auto QuasiQuoteReaderMacroFn = [](Tokens& tokens)
 { GenericReaderMacroFn(tokens, "expected form after 'quasiquote', got EOF", "quasiquote"); };
 
-static const auto QuoteReaderMacroFn = [](Tokens& tokens)
+static constexpr auto QuoteReaderMacroFn = [](Tokens& tokens)
 { GenericReaderMacroFn(tokens, "expected form after 'quote', got EOF", "quote"); };
 
-static const auto SpliceUnquoteReaderMacroFn = [](Tokens& tokens)
+static constexpr auto SpliceUnquoteReaderMacroFn = [](Tokens& tokens)
 { GenericReaderMacroFn(tokens, "expected form after 'splice-unquote', got EOF", "splice-unquote"); };
 
-static const auto UnquoteReaderMacroFn = [](Tokens& tokens)
+static constexpr auto UnquoteReaderMacroFn = [](Tokens& tokens)
 { GenericReaderMacroFn(tokens, "expected form after 'unquote', got EOF", "unquote"); };
 
-static const auto IsReaderMacro = [](const auto& token)
+static constexpr auto IsReaderMacro = [](const auto& token)
 {
-    auto Answer = [](const auto& isReaderMacro, const auto& readerMacroFn) {
+    static constexpr auto Answer = [](const auto& isReaderMacro, const auto& readerMacroFn) {
         return std::pair<bool, ReaderMacroFn>{isReaderMacro, readerMacroFn};
     };
     if (types::DEREF_TOKEN == token)
@@ -225,7 +234,7 @@ static types::RLWSType ReadForm(Tokens& tokens)
 namespace reader
 {
 
-static const auto ReadStr = [](const auto& s)
+static constexpr auto ReadStr = [](const auto& s)
 {
     auto tokens{Tokenize(s, RE_TOKEN)};
     return ReadForm(tokens);
