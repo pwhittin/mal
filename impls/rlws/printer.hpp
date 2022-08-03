@@ -5,9 +5,9 @@
 #include <utility>
 #include "types.hpp"
 
-static const auto SequenceTokens = [](const auto type)
+static constexpr auto SequenceTokens = [](const auto type)
 {
-    auto Answer = [](const auto& startToken, const auto& endToken) {
+    static constexpr auto Answer = [](const auto& startToken, const auto& endToken) {
         return std::pair<types::S, types::S>{startToken, endToken};
     };
     switch (type)
@@ -23,7 +23,8 @@ static const auto SequenceTokens = [](const auto type)
     }
 };
 
-static const auto ExpandGeneric = [](const types::S& s, const types::S& expandSequence, const types::S& replaceSequence)
+static constexpr auto ExpandGeneric =
+    [](const types::S& s, const types::S& expandSequence, const types::S& replaceSequence)
 {
     auto answer{std::string{""}};
     auto lastIndex{std::size_t{0}};
@@ -42,17 +43,22 @@ static const auto ExpandGeneric = [](const types::S& s, const types::S& expandSe
         lastIndex += numberOfCharactersBeforeExpandSequence + expandSequence.length();
     }
 };
-static const auto ExpandDoubleQuote = [](const auto& s) { return ExpandGeneric(s, "\"", "\\\""); };
-static const auto ExpandNewline = [](const auto& s) { return ExpandGeneric(s, "\n", "\\n"); };
-static const auto ExpandBackslash = [](const auto& s) { return ExpandGeneric(s, "\\", "\\\\"); };
-static const auto ExpandString = [](const auto& s) { return ExpandDoubleQuote(ExpandNewline(ExpandBackslash(s))); };
-
-auto PrintAnInteger = [](const auto& rlwsType) { return std::to_string(std::get<types::I>(rlwsType.value)); };
-auto PrintAString = [](const auto& rlwsType) { return "\"" + ExpandString(std::get<types::S>(rlwsType.value)) + "\""; };
-auto PrintASymbol = [](const auto& rlwsType) { return std::get<types::S>(rlwsType.value); };
+static constexpr auto ExpandDoubleQuote = [](const auto& s) { return ExpandGeneric(s, "\"", "\\\""); };
+static constexpr auto ExpandNewline = [](const auto& s) { return ExpandGeneric(s, "\n", "\\n"); };
+static constexpr auto ExpandBackslash = [](const auto& s) { return ExpandGeneric(s, "\\", "\\\\"); };
+static constexpr auto ExpandString = [](const auto& s) { return ExpandDoubleQuote(ExpandNewline(ExpandBackslash(s))); };
 
 static types::S PrintString(const types::RLWSType& rlwsType);
-auto PrintASequence = [](const auto& rlwsType)
+
+static constexpr auto PrintAnInteger = [](const auto& rlwsType)
+{ return std::to_string(std::get<types::I>(rlwsType.value)); };
+
+static constexpr auto PrintAString = [](const auto& rlwsType)
+{ return "\"" + ExpandString(std::get<types::S>(rlwsType.value)) + "\""; };
+
+static constexpr auto PrintASymbol = [](const auto& rlwsType) { return std::get<types::S>(rlwsType.value); };
+
+static constexpr auto PrintASequence = [](const auto& rlwsType)
 {
     auto [startToken, endToken]{SequenceTokens(rlwsType.type)};
     auto sequence{std::get<types::L>(rlwsType.value)};
@@ -87,7 +93,7 @@ static types::S PrintString(const types::RLWSType& rlwsType)
 namespace printer
 {
 
-auto PrintStr = [](const auto& rlwsType) { return PrintString(rlwsType); };
+static constexpr auto PrintStr = [](const auto& rlwsType) { return PrintString(rlwsType); };
 
 } // namespace printer
 
