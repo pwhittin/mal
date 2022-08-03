@@ -69,17 +69,20 @@ static const auto EscapeGeneric = [](const types::S& s, const types::S& escapeSe
 {
     auto answer{std::string{""}};
     auto lastIndex{std::size_t{0}};
-    auto nextIndex{s.find(escapeSequence, lastIndex)};
-    while (std::string::npos != nextIndex)
+    while (true)
     {
+        auto nextIndex{s.find(escapeSequence, lastIndex)};
+        auto escapeSequenceNotFound{std::string::npos == nextIndex};
+        if (escapeSequenceNotFound)
+        {
+            answer.append(s, lastIndex);
+            return answer;
+        }
         auto numberOfCharactersBeforeEscapeSequence{(nextIndex - lastIndex)};
         answer.append(s, lastIndex, numberOfCharactersBeforeEscapeSequence);
         answer.append(replaceSequence);
         lastIndex += numberOfCharactersBeforeEscapeSequence + escapeSequence.length();
-        nextIndex = s.find(escapeSequence, lastIndex);
     }
-    answer.append(s, lastIndex);
-    return answer;
 };
 static const auto EscapeDoubleQuote = [](const auto& s) { return EscapeGeneric(s, "\\\"", "\""); };
 static const auto EscapeNewline = [](const auto& s) { return EscapeGeneric(s, "\\n", "\n"); };
