@@ -2,29 +2,25 @@
 #define PRINTER_H_
 
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include "types.hpp"
 
-static constexpr auto SequenceTokens = [](const auto type)
-{
-    static constexpr auto Answer = [](const auto& startToken, const auto& endToken) {
-        return std::pair<types::S, types::S>{startToken, endToken};
-    };
-    switch (type)
-    {
-    case types::RLWSTypes::RLWS_LIST:
-        return Answer(types::LIST_TOKEN_START, types::LIST_TOKEN_END);
-    case types::RLWSTypes::RLWS_MAP:
-        return Answer(types::MAP_TOKEN_START, types::MAP_TOKEN_END);
-    case types::RLWSTypes::RLWS_VECTOR:
-        return Answer(types::VECTOR_TOKEN_START, types::VECTOR_TOKEN_END);
-    default:
-        return Answer("", "");
-    }
-};
+namespace T = types;
 
-static constexpr auto ExpandGeneric =
-    [](const types::S& s, const types::S& expandSequence, const types::S& replaceSequence)
+using RT = T::RLWSType;
+using RTS = T::RLWSTypes;
+using S = T::S;
+
+using SequenceTokenPair = std::pair<S, S>;
+using SequenceTokenPairMap = std::unordered_map<RTS, SequenceTokenPair>;
+static const auto RLWSTypeToSequenceTokens{
+    SequenceTokenPairMap{{RTS::RLWS_LIST, {T::LIST_TOKEN_START, T::LIST_TOKEN_END}},
+                         {RTS::RLWS_MAP, {T::MAP_TOKEN_START, T::MAP_TOKEN_END}},
+                         {RTS::RLWS_VECTOR, {T::VECTOR_TOKEN_START, T::VECTOR_TOKEN_END}}}};
+static constexpr auto SequenceTokens = [](const auto type) { return RLWSTypeToSequenceTokens.find(type)->second; };
+
+static constexpr auto ExpandGeneric = [](const S& s, const S& expandSequence, const S& replaceSequence)
 {
     auto answer{std::string{""}};
     auto lastIndex{std::size_t{0}};
@@ -48,21 +44,21 @@ static constexpr auto ExpandNewline = [](const auto& s) { return ExpandGeneric(s
 static constexpr auto ExpandBackslash = [](const auto& s) { return ExpandGeneric(s, "\\", "\\\\"); };
 static constexpr auto ExpandString = [](const auto& s) { return ExpandDoubleQuote(ExpandNewline(ExpandBackslash(s))); };
 
-static types::S PrintString(const types::RLWSType& rlwsType);
+static S PrintString(const RT& rlwsType);
 
 static constexpr auto PrintAnInteger = [](const auto& rlwsType)
 { return std::to_string(std::get<types::I>(rlwsType.value)); };
 
 static constexpr auto PrintAString = [](const auto& rlwsType)
-{ return "\"" + ExpandString(std::get<types::S>(rlwsType.value)) + "\""; };
+{ return "\"" + ExpandString(std::get<S>(rlwsType.value)) + "\""; };
 
-static constexpr auto PrintASymbol = [](const auto& rlwsType) { return std::get<types::S>(rlwsType.value); };
+static constexpr auto PrintASymbol = [](const auto& rlwsType) { return std::get<S>(rlwsType.value); };
 
 static constexpr auto PrintASequence = [](const auto& rlwsType)
 {
     auto [startToken, endToken]{SequenceTokens(rlwsType.type)};
     auto sequence{std::get<types::L>(rlwsType.value)};
-    auto result{types::S{startToken}};
+    auto result{S{startToken}};
     for (const auto& v : sequence)
         result += PrintString(v) + " ";
     if (' ' == result.back())
@@ -72,19 +68,19 @@ static constexpr auto PrintASequence = [](const auto& rlwsType)
     return result;
 };
 
-static types::S PrintString(const types::RLWSType& rlwsType)
+static S PrintString(const RT& rlwsType)
 {
     switch (rlwsType.type)
     {
-    case types::RLWSTypes::RLWS_INTEGER:
+    case RTS::RLWS_INTEGER:
         return PrintAnInteger(rlwsType);
-    case types::RLWSTypes::RLWS_STRING:
+    case RTS::RLWS_STRING:
         return PrintAString(rlwsType);
-    case types::RLWSTypes::RLWS_SYMBOL:
+    case RTS::RLWS_SYMBOL:
         return PrintASymbol(rlwsType);
-    case types::RLWSTypes::RLWS_LIST:
-    case types::RLWSTypes::RLWS_MAP:
-    case types::RLWSTypes::RLWS_VECTOR:
+    case RTS::RLWS_LIST:
+    case RTS::RLWS_MAP:
+    case RTS::RLWS_VECTOR:
         return PrintASequence(rlwsType);
     }
     return ""; // quite compiler warning
