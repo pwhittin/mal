@@ -1,7 +1,6 @@
 #ifndef ENV_H_
 #define ENV_H_
 
-#include <iostream>
 #include <functional>
 #include <span>
 #include <unordered_map>
@@ -19,6 +18,13 @@ struct Env
 {
     Env* outer{nullptr};
     EnvData data{};
+};
+
+static constexpr auto EnvCreate = [](Env* const o)
+{
+    auto result{Env{}};
+    result.outer = o;
+    return result;
 };
 
 static constexpr auto EnvSet = [](const auto& rlwsSymbol, const auto& rlwsType, auto& e)
@@ -124,17 +130,19 @@ static const auto DivideFn = [](const auto& argList)
 namespace env
 {
 
-static auto repl_env{Env{}};
+static constexpr auto Create{EnvCreate};
 
+static auto repl_env{Env{}};
 static constexpr auto Init = []()
 {
-    EnvSet(T::CreateRLWSSymbol("+"), T::CreateRLWSFunction(AddFn), repl_env);
-    EnvSet(T::CreateRLWSSymbol("-"), T::CreateRLWSFunction(SubtractFn), repl_env);
-    EnvSet(T::CreateRLWSSymbol("*"), T::CreateRLWSFunction(MultiplyFn), repl_env);
-    EnvSet(T::CreateRLWSSymbol("/"), T::CreateRLWSFunction(DivideFn), repl_env);
+    EnvSet(T::CreateSymbol("+"), T::CreateFunction(AddFn), repl_env);
+    EnvSet(T::CreateSymbol("-"), T::CreateFunction(SubtractFn), repl_env);
+    EnvSet(T::CreateSymbol("*"), T::CreateFunction(MultiplyFn), repl_env);
+    EnvSet(T::CreateSymbol("/"), T::CreateFunction(DivideFn), repl_env);
 };
 
 static constexpr auto Get{EnvGet};
+static constexpr auto Set{EnvSet};
 
 } // namespace env
 

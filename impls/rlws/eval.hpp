@@ -11,16 +11,17 @@ namespace T = types;
 using RT = T::RLWSType;
 using RTS = T::RLWSTypes;
 
-static RT Evaluate(const RT& rlwsType);
+static RT Evaluate(const RT& rlwsType, auto& e);
 
 static constexpr auto EvalSequence = [](const auto& rlwsType, const auto& e)
 {
     auto resultList{L{}};
     auto list{T::ValueList(rlwsType)};
     for (const auto& v : list)
-        resultList.push_back(Evaluate(v));
+        resultList.push_back(Evaluate(v, e));
     return T::CreateRLWSType(rlwsType.type, resultList);
 };
+
 static constexpr auto EvalAst = [](const auto& rlwsType, const auto& e)
 {
     switch (rlwsType.type)
@@ -35,9 +36,9 @@ static constexpr auto EvalAst = [](const auto& rlwsType, const auto& e)
     return rlwsType;
 };
 
-static constexpr auto Call = [](const auto& rlwsType)
+static constexpr auto Apply = [](const auto& rlwsType, auto& e)
 {
-    auto rlwsTypeEvaluated{EvalSequence(rlwsType, E::repl_env)};
+    auto rlwsTypeEvaluated{EvalSequence(rlwsType, e)};
     auto listEvaluated{T::ValueList(rlwsTypeEvaluated)};
     auto rlwsFunction{T::First(listEvaluated)};
     if (not T::IsFunction(rlwsFunction))
@@ -46,22 +47,28 @@ static constexpr auto Call = [](const auto& rlwsType)
     return function(rlwsTypeEvaluated);
 };
 
-static RT Evaluate(const RT& rlwsType)
+static constexpr auto DefBang = [](const auto& rlwsType, auto& e) { return rlwsType; };
+
+static constexpr auto LetStar = [](const auto& rlwsType, auto& e) { return rlwsType; };
+
+static constexpr auto Call = [](const auto& rlwsType, auto& e)
 {
-    return (not T::IsList(rlwsType))            ? EvalAst(rlwsType, env::repl_env)
+    return T::IsDefBang(rlwsType)   ? DefBang(rlwsType, e)
+           : T::IsLetStar(rlwsType) ? LetStar(rlwsType, e)
+                                    : Apply(rlwsType, e);
+};
+
+static RT Evaluate(const RT& rlwsType, auto& e)
+{
+    return (not T::IsList(rlwsType))            ? EvalAst(rlwsType, e)
            : T::IsEmpty(T::ValueList(rlwsType)) ? rlwsType
-                                                : Call(rlwsType);
+                                                : Call(rlwsType, e);
 };
 
 namespace eval
 {
 
-static constexpr auto Eval = [](const auto& rlwsType)
-{
-    return (not T::IsList(rlwsType))            ? EvalAst(rlwsType, env::repl_env)
-           : T::IsEmpty(T::ValueList(rlwsType)) ? rlwsType
-                                                : Call(rlwsType);
-};
+static constexpr auto Eval = [](const auto& rlwsType) { return Evaluate(rlwsType, env::repl_env); };
 
 } // namespace eval
 

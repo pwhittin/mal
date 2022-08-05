@@ -1,8 +1,6 @@
 #ifndef READER_H_
 #define READER_H_
 
-#include <iostream>
-
 #include <functional>
 #include <regex>
 #include <stdexcept>

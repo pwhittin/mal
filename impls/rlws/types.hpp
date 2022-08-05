@@ -11,8 +11,10 @@
 namespace types
 {
 
+static const auto DEFBANG_TOKEN{"def!"};
 static const auto DEREF_TOKEN{"@"};
 static const auto KEYWORD_TOKEN{"\xFF"};
+static const auto LETSTAR_TOKEN{"let*"};
 static const auto LIST_TOKEN_END{")"};
 static const auto LIST_TOKEN_START{"("};
 static const auto MAP_TOKEN_END{"}"};
@@ -55,24 +57,14 @@ struct RLWSType
 static constexpr auto CreateRLWSType = [](const auto type, const auto& value)
 { return RLWSType{.type = type, .value = value}; };
 
-static constexpr auto CreateRLWSFunction = [](const auto& value)
+static constexpr auto CreateFunction = [](const auto& value)
 { return CreateRLWSType(RLWSTypes::RLWS_FUNCTION, value); };
-
-static constexpr auto CreateRLWSInteger = [](const auto& value)
-{ return CreateRLWSType(RLWSTypes::RLWS_INTEGER, value); };
-
-static constexpr auto CreateRLWSList = [](const auto& value) { return CreateRLWSType(RLWSTypes::RLWS_LIST, value); };
-
-static constexpr auto CreateRLWSMap = [](const auto& value) { return CreateRLWSType(RLWSTypes::RLWS_MAP, value); };
-
-static constexpr auto CreateRLWSString = [](const auto& value)
-{ return CreateRLWSType(RLWSTypes::RLWS_STRING, value); };
-
-static constexpr auto CreateRLWSSymbol = [](const auto& value)
-{ return CreateRLWSType(RLWSTypes::RLWS_SYMBOL, value); };
-
-static constexpr auto CreateRLWSVector = [](const auto& value)
-{ return CreateRLWSType(RLWSTypes::RLWS_VECTOR, value); };
+static constexpr auto CreateInteger = [](const auto& value) { return CreateRLWSType(RLWSTypes::RLWS_INTEGER, value); };
+static constexpr auto CreateList = [](const auto& value) { return CreateRLWSType(RLWSTypes::RLWS_LIST, value); };
+static constexpr auto CreateMap = [](const auto& value) { return CreateRLWSType(RLWSTypes::RLWS_MAP, value); };
+static constexpr auto CreateString = [](const auto& value) { return CreateRLWSType(RLWSTypes::RLWS_STRING, value); };
+static constexpr auto CreateSymbol = [](const auto& value) { return CreateRLWSType(RLWSTypes::RLWS_SYMBOL, value); };
+static constexpr auto CreateVector = [](const auto& value) { return CreateRLWSType(RLWSTypes::RLWS_VECTOR, value); };
 
 static constexpr auto IsFunction = [](const auto& rlwsType) { return (RLWSTypes::RLWS_FUNCTION == rlwsType.type); };
 static constexpr auto IsInteger = [](const auto& rlwsType) { return (RLWSTypes::RLWS_INTEGER == rlwsType.type); };
@@ -83,7 +75,6 @@ static constexpr auto IsSymbol = [](const auto& rlwsType) { return (RLWSTypes::R
 static constexpr auto IsVector = [](const auto& rlwsType) { return (RLWSTypes::RLWS_VECTOR == rlwsType.type); };
 
 static constexpr auto ValueSequence = [](const auto& rlwsType) { return std::get<L>(rlwsType.value); };
-
 static constexpr auto ValueFunction = [](const auto& rlwsType) { return std::get<F>(rlwsType.value); };
 static constexpr auto ValueInteger = [](const auto& rlwsType) { return std::get<I>(rlwsType.value); };
 static constexpr auto ValueList = [](const auto& rlwsType) { return ValueSequence(rlwsType); };
@@ -116,6 +107,38 @@ static constexpr auto RLWSTypeToString = [](const auto& rlwsType)
         return S{"Vector"};
     }
     return S{"UNKNOWN"};
+};
+
+static constexpr auto IsDefBang = [](const auto& rlwsType)
+{
+    if (not IsList(rlwsType))
+        return false;
+    auto list{ValueList(rlwsType)};
+    if (3 != Count(list))
+        return false;
+    auto firstElement{list[0]};
+    if ((not IsSymbol(firstElement)) or (DEFBANG_TOKEN != ValueSymbol(firstElement)))
+        return false;
+    auto secondElement(list[1]);
+    if (not IsSymbol(secondElement))
+        return false;
+    return true;
+};
+
+static constexpr auto IsLetStar = [](const auto& rlwsType)
+{
+    if (not IsList(rlwsType))
+        return false;
+    auto list{ValueList(rlwsType)};
+    if (3 != Count(list))
+        return false;
+    auto firstElement{list[0]};
+    if ((not IsSymbol(firstElement)) or (LETSTAR_TOKEN != ValueSymbol(firstElement)))
+        return false;
+    auto secondElement(list[1]);
+    if (not(IsList(secondElement) or IsVector(rlwsType)))
+        return false;
+    return true;
 };
 
 } // namespace types
