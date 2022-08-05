@@ -55,6 +55,25 @@ struct RLWSType
 static constexpr auto CreateRLWSType = [](const auto type, const auto& value)
 { return RLWSType{.type = type, .value = value}; };
 
+static constexpr auto CreateRLWSFunction = [](const auto& value)
+{ return CreateRLWSType(RLWSTypes::RLWS_FUNCTION, value); };
+
+static constexpr auto CreateRLWSInteger = [](const auto& value)
+{ return CreateRLWSType(RLWSTypes::RLWS_INTEGER, value); };
+
+static constexpr auto CreateRLWSList = [](const auto& value) { return CreateRLWSType(RLWSTypes::RLWS_LIST, value); };
+
+static constexpr auto CreateRLWSMap = [](const auto& value) { return CreateRLWSType(RLWSTypes::RLWS_MAP, value); };
+
+static constexpr auto CreateRLWSString = [](const auto& value)
+{ return CreateRLWSType(RLWSTypes::RLWS_STRING, value); };
+
+static constexpr auto CreateRLWSSymbol = [](const auto& value)
+{ return CreateRLWSType(RLWSTypes::RLWS_SYMBOL, value); };
+
+static constexpr auto CreateRLWSVector = [](const auto& value)
+{ return CreateRLWSType(RLWSTypes::RLWS_VECTOR, value); };
+
 static constexpr auto IsFunction = [](const auto& rlwsType) { return (RLWSTypes::RLWS_FUNCTION == rlwsType.type); };
 static constexpr auto IsInteger = [](const auto& rlwsType) { return (RLWSTypes::RLWS_INTEGER == rlwsType.type); };
 static constexpr auto IsList = [](const auto& rlwsType) { return (RLWSTypes::RLWS_LIST == rlwsType.type); };

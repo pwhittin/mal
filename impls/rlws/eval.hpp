@@ -26,7 +26,7 @@ static constexpr auto EvalAst = [](const auto& rlwsType, const auto& e)
     switch (rlwsType.type)
     {
     case RTS::RLWS_SYMBOL:
-        return E::Lookup(rlwsType, e);
+        return E::Get(rlwsType, e);
     case RTS::RLWS_LIST:
     case RTS::RLWS_MAP:
     case RTS::RLWS_VECTOR:

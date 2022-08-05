@@ -14,7 +14,38 @@ using RT = T::RLWSType;
 using RTS = T::RLWSTypes;
 using S = T::S;
 
-using Env = std::unordered_map<S, RT>;
+using EnvData = std::unordered_map<S, RT>;
+struct Env
+{
+    Env* outer{nullptr};
+    EnvData data{};
+};
+
+static constexpr auto EnvSet = [](const auto& rlwsSymbol, const auto& rlwsType, auto& e)
+{
+    auto symbol{T::ValueSymbol(rlwsSymbol)};
+    e.data.insert_or_assign(symbol, rlwsType);
+};
+
+static Env EnvFind(const auto& rlwsSymbol, const auto& e)
+{
+    auto symbol{T::ValueSymbol(rlwsSymbol)};
+    auto ePair{e.data.find(symbol)};
+    auto symbolNotFound{e.data.end() == ePair};
+    auto outermostEnv{nullptr == e.outer};
+    return (symbolNotFound or outermostEnv) ? e : EnvFind(rlwsSymbol, *e.outer);
+};
+
+static constexpr auto EnvGet = [](const auto& rlwsSymbol, const auto& e)
+{
+    auto eFound{EnvFind(rlwsSymbol, e)};
+    auto symbol{T::ValueSymbol(rlwsSymbol)};
+    auto eFoundPair{eFound.data.find(symbol)};
+    auto symbolNotFound{eFound.data.end() == eFoundPair};
+    if (symbolNotFound)
+        throw std::invalid_argument("Symbol \"" + symbol + "\" not found");
+    return eFoundPair->second;
+};
 
 static constexpr auto GenericInteger = [](const auto& fnName)
 {
@@ -90,26 +121,20 @@ static const auto DivideFn = [](const auto& argList)
     return CreateInteger(result);
 };
 
-static constexpr auto CreateFunction = [](const auto fn) { return T::CreateRLWSType(RTS::RLWS_FUNCTION, fn); };
-
-static constexpr auto LookupFailed = [](const auto& env, const auto& envElement) { return (env.end() == envElement); };
-
 namespace env
 {
 
-static const auto repl_env{Env{{"+", CreateFunction(AddFn)},
-                               {"-", CreateFunction(SubtractFn)},
-                               {"*", CreateFunction(MultiplyFn)},
-                               {"/", CreateFunction(DivideFn)}}};
+static auto repl_env{Env{}};
 
-static constexpr auto Lookup = [](const auto& rlwsType, const auto& env)
+static constexpr auto Init = []()
 {
-    auto symbol{T::ValueSymbol(rlwsType)};
-    auto envElement{env.find(symbol)};
-    if (LookupFailed(env, envElement))
-        throw std::invalid_argument("unbound symbol: '" + symbol + "'");
-    return envElement->second;
+    EnvSet(T::CreateRLWSSymbol("+"), T::CreateRLWSFunction(AddFn), repl_env);
+    EnvSet(T::CreateRLWSSymbol("-"), T::CreateRLWSFunction(SubtractFn), repl_env);
+    EnvSet(T::CreateRLWSSymbol("*"), T::CreateRLWSFunction(MultiplyFn), repl_env);
+    EnvSet(T::CreateRLWSSymbol("/"), T::CreateRLWSFunction(DivideFn), repl_env);
 };
+
+static constexpr auto Get{EnvGet};
 
 } // namespace env
 

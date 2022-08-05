@@ -25,6 +25,7 @@ const auto IsEOF = [](const auto& in) noexcept { return in.eof(); };
 
 int main()
 {
+    env::Init();
     while (not IsEOF(std::cin))
     {
         std::cout << PROMPT;

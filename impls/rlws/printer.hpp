@@ -47,8 +47,7 @@ static constexpr auto ExpandString = [](const auto& s) { return ExpandDoubleQuot
 
 static S PrintString(const RT& rlwsType);
 
-static constexpr auto PrintAnInteger = [](const auto& rlwsType)
-{ return std::to_string(std::get<types::I>(rlwsType.value)); };
+static constexpr auto PrintAnInteger = [](const auto& rlwsType) { return std::to_string(T::ValueInteger(rlwsType)); };
 
 static constexpr auto PrintAString = [](const auto& rlwsType)
 {
@@ -58,12 +57,12 @@ static constexpr auto PrintAString = [](const auto& rlwsType)
     return "\"" + ExpandString(s) + "\"";
 };
 
-static constexpr auto PrintASymbol = [](const auto& rlwsType) { return std::get<S>(rlwsType.value); };
+static constexpr auto PrintASymbol = [](const auto& rlwsType) { return T::ValueSymbol(rlwsType); };
 
 static constexpr auto PrintASequence = [](const auto& rlwsType)
 {
     auto [startToken, endToken]{SequenceTokens(rlwsType.type)};
-    auto sequence{std::get<types::L>(rlwsType.value)};
+    auto sequence{T::ValueSequence(rlwsType)};
     auto result{S{startToken}};
     for (const auto& v : sequence)
         result += PrintString(v) + " ";
