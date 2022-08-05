@@ -65,7 +65,7 @@ static constexpr auto IsInteger = [](const auto& token)
 };
 
 static constexpr auto RLWSInteger = [](const auto& token)
-{ return RT{.type = RTS::RLWS_INTEGER, .value = std::stoi(token)}; };
+{ return T::CreateRLWSType(RTS::RLWS_INTEGER, std::stoi(token)); };
 
 static constexpr auto IsString = [](const auto& token)
 {
@@ -107,10 +107,10 @@ static constexpr auto RLWSString = [](const auto& token)
 {
     auto stringBody{token.substr(1, token.length() - 2)};
     auto value{ReplaceEscapes(stringBody)};
-    return RT{.type = RTS::RLWS_STRING, .value = value};
+    return T::CreateRLWSType(RTS::RLWS_STRING, value);
 };
 
-static constexpr auto RLWSSymbol = [](const auto& token) { return RT{.type = RTS::RLWS_SYMBOL, .value = token}; };
+static constexpr auto RLWSSymbol = [](const auto& token) { return T::CreateRLWSType(RTS::RLWS_SYMBOL, token); };
 
 static constexpr auto ReadAtom = [](auto& tokens)
 {
@@ -124,15 +124,13 @@ static RT ReadForm(Tokens& tokens);
 static constexpr auto ReadSequence = [](auto& tokens, const auto& endToken, const RTS type)
 {
     Next(tokens); // eat sequence start token
-    auto result{RT{}};
-    result.type = type;
-    result.value = L{};
+    auto resultList{L{}};
     while ((EMPTY_TOKEN != Peek(tokens)) and (endToken != Peek(tokens)))
-        std::get<L>(result.value).push_back(ReadForm(tokens));
+        resultList.push_back(ReadForm(tokens));
     if (EMPTY_TOKEN == Peek(tokens))
         throw std::invalid_argument("expected '" + endToken + "', got EOF");
     Next(tokens); // eat sequence end token
-    return result;
+    return T::CreateRLWSType(type, resultList);
 };
 
 using SequenceValue = std::pair<S, RTS>;

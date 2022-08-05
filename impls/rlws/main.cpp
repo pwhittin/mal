@@ -2,12 +2,13 @@
 #include <stdexcept>
 #include <string>
 
+#include "eval.hpp"
 #include "printer.hpp"
 #include "reader.hpp"
 #include "types.hpp"
 
 auto READ = [](const auto& s) { return reader::ReadStr(s); };
-auto EVAL = [](const auto& rlwsType) { return rlwsType; };
+auto EVAL = [](const auto& rlwsType) { return eval::Eval(rlwsType); };
 auto PRINT = [](const auto& rlwsType) { return printer::PrintStr(rlwsType); };
 auto rep = [](const auto& s) { return PRINT(EVAL(READ(s))); };
 
