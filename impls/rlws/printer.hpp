@@ -51,7 +51,12 @@ static constexpr auto PrintAnInteger = [](const auto& rlwsType)
 { return std::to_string(std::get<types::I>(rlwsType.value)); };
 
 static constexpr auto PrintAString = [](const auto& rlwsType)
-{ return "\"" + ExpandString(std::get<S>(rlwsType.value)) + "\""; };
+{
+    auto s{T::ValueString(rlwsType)};
+    if (s.starts_with(T::KEYWORD_TOKEN))
+        return ":" + s.substr(1);
+    return "\"" + ExpandString(s) + "\"";
+};
 
 static constexpr auto PrintASymbol = [](const auto& rlwsType) { return std::get<S>(rlwsType.value); };
 

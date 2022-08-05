@@ -67,6 +67,15 @@ static constexpr auto IsInteger = [](const auto& token)
 static constexpr auto RLWSInteger = [](const auto& token)
 { return T::CreateRLWSType(RTS::RLWS_INTEGER, std::stoi(token)); };
 
+static constexpr auto IsKeyword = [](const auto& token)
+{
+    static const auto RE_KEYWORD{RE{R"(:.+)"}};
+    return std::regex_match(token, RE_KEYWORD);
+};
+
+static constexpr auto RLWSKeyword = [](const auto& token)
+{ return T::CreateRLWSType(RTS::RLWS_STRING, T::KEYWORD_TOKEN + token.substr(1)); };
+
 static constexpr auto IsString = [](const auto& token)
 {
     static const auto RE_STRING{RE{R"("(?:\\.|[^\\"])*")"}};
@@ -115,9 +124,10 @@ static constexpr auto RLWSSymbol = [](const auto& token) { return T::CreateRLWST
 static constexpr auto ReadAtom = [](auto& tokens)
 {
     auto token{Peek(tokens)};
-    return IsInteger(token)  ? RLWSInteger(Next(tokens))
-           : IsString(token) ? RLWSString(Next(tokens))
-                             : RLWSSymbol(Next(tokens));
+    return IsInteger(token)   ? RLWSInteger(Next(tokens))
+           : IsKeyword(token) ? RLWSKeyword(Next(tokens))
+           : IsString(token)  ? RLWSString(Next(tokens))
+                              : RLWSSymbol(Next(tokens));
 };
 
 static RT ReadForm(Tokens& tokens);

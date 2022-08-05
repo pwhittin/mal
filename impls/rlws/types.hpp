@@ -12,6 +12,7 @@ namespace types
 {
 
 static const auto DEREF_TOKEN{"@"};
+static const auto KEYWORD_TOKEN{"\xFF"};
 static const auto LIST_TOKEN_END{")"};
 static const auto LIST_TOKEN_START{"("};
 static const auto MAP_TOKEN_END{"}"};
