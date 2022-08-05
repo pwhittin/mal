@@ -2,7 +2,7 @@
 #define TYPES_H_
 
 #include <cstdint>
-//#include <functional>
+#include <functional>
 #include <span>
 #include <string>
 #include <variant>
@@ -29,8 +29,7 @@ static const auto VECTOR_TOKEN_START{"["};
 
 struct RLWSType;
 
-using F = RLWSType (*)(const RLWSType&);
-// using F = std::function<RLWSType(const RLWSType&)>;
+using F = std::function<RLWSType(const RLWSType&)>;
 using I = intmax_t;
 using L = std::vector<RLWSType>;
 using S = std::string;
