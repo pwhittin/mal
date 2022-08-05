@@ -13,21 +13,31 @@ using RTS = T::RLWSTypes;
 
 static RT Evaluate(const RT& rlwsType);
 
-static constexpr auto EvalList = [](const auto& rlwsType, const auto& e)
+static constexpr auto EvalSequence = [](const auto& rlwsType, const auto& e)
 {
     auto resultList{L{}};
     auto list{T::ValueList(rlwsType)};
     for (const auto& v : list)
         resultList.push_back(Evaluate(v));
-    return T::CreateRLWSType(RTS::RLWS_LIST, resultList);
+    return T::CreateRLWSType(rlwsType.type, resultList);
 };
-static constexpr auto EvalAst = [](const auto& rlwsType, const auto& e) {
-    return T::IsSymbol(rlwsType) ? E::Lookup(rlwsType, e) : T::IsList(rlwsType) ? EvalList(rlwsType, e) : rlwsType;
+static constexpr auto EvalAst = [](const auto& rlwsType, const auto& e)
+{
+    switch (rlwsType.type)
+    {
+    case RTS::RLWS_SYMBOL:
+        return E::Lookup(rlwsType, e);
+    case RTS::RLWS_LIST:
+    case RTS::RLWS_MAP:
+    case RTS::RLWS_VECTOR:
+        return EvalSequence(rlwsType, e);
+    }
+    return rlwsType;
 };
 
 static constexpr auto Call = [](const auto& rlwsType)
 {
-    auto rlwsTypeEvaluated{EvalList(rlwsType, E::repl_env)};
+    auto rlwsTypeEvaluated{EvalSequence(rlwsType, E::repl_env)};
     auto listEvaluated{T::ValueList(rlwsTypeEvaluated)};
     auto rlwsFunction{T::First(listEvaluated)};
     if (not T::IsFunction(rlwsFunction))
