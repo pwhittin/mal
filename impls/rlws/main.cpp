@@ -35,7 +35,7 @@ int main()
         }
         catch (const std::invalid_argument& ia)
         {
-            std::cout << ia.what() << "\n";
+            std::cout << "Error: " << ia.what() << "\n";
         }
     }
 

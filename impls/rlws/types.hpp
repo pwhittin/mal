@@ -114,30 +114,52 @@ static constexpr auto IsDefBang = [](const auto& rlwsType)
     if (not IsList(rlwsType))
         return false;
     auto list{ValueList(rlwsType)};
+    if (IsEmpty(list))
+        return false;
+    auto defBang{list[0]};
+    if ((not IsSymbol(defBang)) or (DEFBANG_TOKEN != ValueSymbol(defBang)))
+        return false;
     if (3 != Count(list))
-        return false;
-    auto firstElement{list[0]};
-    if ((not IsSymbol(firstElement)) or (DEFBANG_TOKEN != ValueSymbol(firstElement)))
-        return false;
-    auto secondElement(list[1]);
-    if (not IsSymbol(secondElement))
-        return false;
+        throw std::invalid_argument("two arguments required");
+    auto symbol(list[1]);
+    if (not IsSymbol(symbol))
+        throw std::invalid_argument("first argument must be a symbol");
     return true;
 };
 
 static constexpr auto IsLetStar = [](const auto& rlwsType)
 {
+    auto IsEven = [](const auto n) { return (0 == (n % 2)); };
+    auto AllOddFormsAreSymbols = [](const auto& symbolValuePairSequence)
+    {
+        auto currentPairIndex{0};
+        auto maxPairIndex{Count(symbolValuePairSequence) - 1};
+        while (currentPairIndex <= maxPairIndex)
+        {
+            if (not IsSymbol(symbolValuePairSequence[currentPairIndex]))
+                throw std::invalid_argument("odd forms must be symbols");
+            currentPairIndex += 2;
+        }
+        return true;
+    };
     if (not IsList(rlwsType))
         return false;
     auto list{ValueList(rlwsType)};
+    if (IsEmpty(list))
+        return false;
+    auto letStar{list[0]};
+    if ((not IsSymbol(letStar)) or (LETSTAR_TOKEN != ValueSymbol(letStar)))
+        return false;
     if (3 != Count(list))
-        return false;
-    auto firstElement{list[0]};
-    if ((not IsSymbol(firstElement)) or (LETSTAR_TOKEN != ValueSymbol(firstElement)))
-        return false;
-    auto secondElement(list[1]);
-    if (not(IsList(secondElement) or IsVector(rlwsType)))
-        return false;
+        throw std::invalid_argument("two arguments required");
+    auto localBindings(list[1]);
+    if (not(IsList(localBindings) or IsVector(localBindings)))
+        throw std::invalid_argument("local bindings must be a list or a vector");
+    auto symbolValuePairSequence{ValueSequence(localBindings)};
+    if (not IsEven(Count(symbolValuePairSequence)))
+        throw std::invalid_argument("even number of forms required in local bindings");
+    if (not AllOddFormsAreSymbols(symbolValuePairSequence))
+        throw std::invalid_argument("odd forms must be symbols in local bindings");
     return true;
 };
 

@@ -13,7 +13,7 @@ using RTS = T::RLWSTypes;
 
 static RT Evaluate(const RT& rlwsType, auto& e);
 
-static constexpr auto EvalSequence = [](const auto& rlwsType, const auto& e)
+static constexpr auto EvalSequence = [](const auto& rlwsType, auto& e)
 {
     auto resultList{L{}};
     auto list{T::ValueList(rlwsType)};
@@ -22,7 +22,7 @@ static constexpr auto EvalSequence = [](const auto& rlwsType, const auto& e)
     return T::CreateRLWSType(rlwsType.type, resultList);
 };
 
-static constexpr auto EvalAst = [](const auto& rlwsType, const auto& e)
+static constexpr auto EvalAst = [](const auto& rlwsType, auto& e)
 {
     switch (rlwsType.type)
     {
@@ -47,9 +47,33 @@ static constexpr auto Apply = [](const auto& rlwsType, auto& e)
     return function(rlwsTypeEvaluated);
 };
 
-static constexpr auto DefBang = [](const auto& rlwsType, auto& e) { return rlwsType; };
+static constexpr auto DefBang = [](const auto& rlwsType, auto& e)
+{
+    auto list{T::ValueList(rlwsType)};
+    auto symbol{list[1]};
+    auto value{list[2]};
+    auto evaluatedValue{Evaluate(value, e)};
+    return env::Set(symbol, evaluatedValue, e);
+};
 
-static constexpr auto LetStar = [](const auto& rlwsType, auto& e) { return rlwsType; };
+static constexpr auto LetStar = [](const auto& rlwsType, auto& e)
+{
+    auto AddSymbolValuePairsToLocalEnv = [](const auto& symbolValuePairSequence, auto& localEnv)
+    {
+        auto i{0};
+        auto n{T::Count(symbolValuePairSequence)};
+        while (i < n)
+        {
+            env::Set(symbolValuePairSequence[i], Evaluate(symbolValuePairSequence[i + 1], localEnv), localEnv);
+            i += 2;
+        }
+    };
+    auto list{T::ValueList(rlwsType)};
+    auto symbolValuePairSequence{T::ValueSequence(list[1])};
+    auto localEnv{env::Create(&e)};
+    AddSymbolValuePairsToLocalEnv(symbolValuePairSequence, localEnv);
+    return Evaluate(list[2], localEnv);
+};
 
 static constexpr auto Call = [](const auto& rlwsType, auto& e)
 {

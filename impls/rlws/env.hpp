@@ -2,7 +2,6 @@
 #define ENV_H_
 
 #include <functional>
-#include <span>
 #include <unordered_map>
 #include "types.hpp"
 
@@ -20,26 +19,27 @@ struct Env
     EnvData data{};
 };
 
-static constexpr auto EnvCreate = [](Env* const o)
+static constexpr auto EnvCreate = [](Env* const outerEnv)
 {
     auto result{Env{}};
-    result.outer = o;
+    result.outer = outerEnv;
     return result;
 };
 
-static constexpr auto EnvSet = [](const auto& rlwsSymbol, const auto& rlwsType, auto& e)
+static constexpr auto EnvSet = [](const auto& rlwsSymbol, const auto& rlwsType, Env& e)
 {
-    auto symbol{T::ValueSymbol(rlwsSymbol)};
+    T::S symbol{T::ValueSymbol(rlwsSymbol)};
     e.data.insert_or_assign(symbol, rlwsType);
+    return rlwsType;
 };
 
 static Env EnvFind(const auto& rlwsSymbol, const auto& e)
 {
     auto symbol{T::ValueSymbol(rlwsSymbol)};
     auto ePair{e.data.find(symbol)};
-    auto symbolNotFound{e.data.end() == ePair};
     auto outermostEnv{nullptr == e.outer};
-    return (symbolNotFound or outermostEnv) ? e : EnvFind(rlwsSymbol, *e.outer);
+    auto symbolFound{e.data.end() != ePair};
+    return (outermostEnv or symbolFound) ? e : EnvFind(rlwsSymbol, *e.outer);
 };
 
 static constexpr auto EnvGet = [](const auto& rlwsSymbol, const auto& e)
@@ -49,7 +49,7 @@ static constexpr auto EnvGet = [](const auto& rlwsSymbol, const auto& e)
     auto eFoundPair{eFound.data.find(symbol)};
     auto symbolNotFound{eFound.data.end() == eFoundPair};
     if (symbolNotFound)
-        throw std::invalid_argument("Symbol \"" + symbol + "\" not found");
+        throw std::invalid_argument("Symbol '" + symbol + "' not found");
     return eFoundPair->second;
 };
 
