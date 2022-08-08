@@ -81,7 +81,7 @@ static constexpr auto IsString = [](const auto& token)
         return false;
     if (std::regex_match(token, RE_STRING))
         return true;
-    throw std::invalid_argument("unbalanced string: '" + token + "'");
+    throw T::CreateException("unbalanced string: '" + token + "'");
 };
 
 static constexpr auto EscapeGeneric = [](const S& s, const S& escapeSequence, const S& replaceSequence)
@@ -136,7 +136,7 @@ static constexpr auto ReadSequence = [](auto& tokens, const auto& endToken, cons
     while ((EMPTY_TOKEN != Peek(tokens)) and (endToken != Peek(tokens)))
         resultList.push_back(ReadForm(tokens));
     if (EMPTY_TOKEN == Peek(tokens))
-        throw std::invalid_argument("expected '" + endToken + "', got EOF");
+        throw T::CreateException("expected '" + endToken + "', got EOF");
     Next(tokens); // eat sequence end token
     return T::CreateRLWSType(type, resultList);
 };
@@ -179,7 +179,7 @@ static constexpr auto GenericReaderMacroFn = [](auto& tokens, const auto& errorM
     auto nextForm{ReadForm(tokens)};
     auto nextFormString{printer::PrintStr(nextForm)};
     if (nextFormString.empty())
-        throw std::invalid_argument(errorMessage);
+        throw T::CreateException(errorMessage);
     auto insertString{S{"("} + fnName + " " + nextFormString + ")"};
     auto insertTokens{Tokenize(insertString, RE_TOKEN)};
     InsertTokens(tokens, insertTokens);
@@ -193,12 +193,12 @@ static constexpr auto MetaReaderMacroFn = [](Tokens& tokens)
     Next(tokens); // eat the deref token
     auto metaForm{ReadForm(tokens)};
     if (RTS::RLWS_MAP != metaForm.type)
-        throw std::invalid_argument("expected 'map' form after 'meta'");
+        throw T::CreateException("expected 'map' form after 'meta'");
     auto metaFormString{printer::PrintStr(metaForm)};
     auto nextForm{ReadForm(tokens)};
     auto nextFormString{printer::PrintStr(nextForm)};
     if (nextFormString.empty())
-        throw std::invalid_argument("expected form after 'meta' form, got EOF");
+        throw T::CreateException("expected form after 'meta' form, got EOF");
     auto insertString{S{"(with-meta "} + nextFormString + " " + metaFormString + ")"};
     auto insertTokens{Tokenize(insertString, RE_TOKEN)};
     InsertTokens(tokens, insertTokens);

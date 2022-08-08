@@ -49,7 +49,7 @@ static constexpr auto EnvGet = [](const auto& rlwsSymbol, const auto& e)
     auto eFoundPair{eFound.data.find(symbol)};
     auto symbolNotFound{eFound.data.end() == eFoundPair};
     if (symbolNotFound)
-        throw std::invalid_argument("Symbol '" + symbol + "' not found");
+        throw T::CreateException("Symbol '" + symbol + "' not found");
     return eFoundPair->second;
 };
 
@@ -58,7 +58,7 @@ static constexpr auto GenericInteger = [](const auto& fnName)
     return [fnName](const auto& rlwsType)
     {
         if (not T::IsInteger(rlwsType))
-            throw std::invalid_argument(S{fnName} + ": non-integer arg [" + T::RLWSTypeToString(rlwsType) + "]");
+            throw T::CreateException(S{fnName} + ": non-integer arg [" + T::RLWSTypeToString(rlwsType) + "]");
         auto result{T::ValueInteger(rlwsType)};
         return result;
     };
@@ -85,7 +85,7 @@ static const auto SubtractFn = [](const auto& argList)
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
     if (1 == argCount)
-        throw std::invalid_argument("/: Wrong number of args (0)");
+        throw T::CreateException("/: Wrong number of args (0)");
     if (2 == argCount)
         return CreateInteger(-Integer(args[1]));
     auto result{Integer(args[1])};
@@ -113,7 +113,7 @@ static const auto DivideFn = [](const auto& argList)
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
     if (1 == argCount)
-        throw std::invalid_argument("/: Wrong number of args (0)");
+        throw T::CreateException("/: Wrong number of args (0)");
     if (2 == argCount)
         return CreateInteger(0);
     auto result{Integer(args[1])};
@@ -121,7 +121,7 @@ static const auto DivideFn = [](const auto& argList)
     {
         auto divisor{Integer(args[i])};
         if (I{0} == divisor)
-            throw std::invalid_argument("/: Division by zero");
+            throw T::CreateException("/: Division by zero");
         result /= divisor;
     }
     return CreateInteger(result);

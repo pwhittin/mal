@@ -3,7 +3,7 @@
 
 #include <cstdint>
 #include <functional>
-#include <span>
+#include <stdexcept>
 #include <string>
 #include <variant>
 #include <vector>
@@ -59,6 +59,7 @@ static constexpr auto CreateRLWSType = [](const auto type, const auto& value)
 
 static constexpr auto CreateFunction = [](const auto& value)
 { return CreateRLWSType(RLWSTypes::RLWS_FUNCTION, value); };
+
 static constexpr auto CreateInteger = [](const auto& value) { return CreateRLWSType(RLWSTypes::RLWS_INTEGER, value); };
 static constexpr auto CreateList = [](const auto& value) { return CreateRLWSType(RLWSTypes::RLWS_LIST, value); };
 static constexpr auto CreateMap = [](const auto& value) { return CreateRLWSType(RLWSTypes::RLWS_MAP, value); };
@@ -86,6 +87,8 @@ static constexpr auto ValueVector = [](const auto& rlwsType) { return ValueSeque
 static constexpr auto Count = [](const auto& sequence) { return sequence.size(); };
 static constexpr auto First = [](const auto& sequence) { return sequence[0]; };
 static constexpr auto IsEmpty = [](const auto& sequence) { return (0 == Count(sequence)); };
+
+static constexpr auto CreateException = [](const auto& message) { return std::invalid_argument(message); };
 
 static constexpr auto RLWSTypeToString = [](const auto& rlwsType)
 {
@@ -120,10 +123,10 @@ static constexpr auto IsDefBang = [](const auto& rlwsType)
     if ((not IsSymbol(defBang)) or (DEFBANG_TOKEN != ValueSymbol(defBang)))
         return false;
     if (3 != Count(list))
-        throw std::invalid_argument("two arguments required");
+        throw CreateException("two arguments required");
     auto symbol(list[1]);
     if (not IsSymbol(symbol))
-        throw std::invalid_argument("first argument must be a symbol");
+        throw CreateException("first argument must be a symbol");
     return true;
 };
 
@@ -137,7 +140,7 @@ static constexpr auto IsLetStar = [](const auto& rlwsType)
         while (currentPairIndex <= maxPairIndex)
         {
             if (not IsSymbol(symbolValuePairSequence[currentPairIndex]))
-                throw std::invalid_argument("odd forms must be symbols");
+                throw CreateException("odd forms must be symbols");
             currentPairIndex += 2;
         }
         return true;
@@ -151,15 +154,15 @@ static constexpr auto IsLetStar = [](const auto& rlwsType)
     if ((not IsSymbol(letStar)) or (LETSTAR_TOKEN != ValueSymbol(letStar)))
         return false;
     if (3 != Count(list))
-        throw std::invalid_argument("two arguments required");
+        throw CreateException("two arguments required");
     auto localBindings(list[1]);
     if (not(IsList(localBindings) or IsVector(localBindings)))
-        throw std::invalid_argument("local bindings must be a list or a vector");
+        throw CreateException("local bindings must be a list or a vector");
     auto symbolValuePairSequence{ValueSequence(localBindings)};
     if (not IsEven(Count(symbolValuePairSequence)))
-        throw std::invalid_argument("even number of forms required in local bindings");
+        throw CreateException("even number of forms required in local bindings");
     if (not AllOddFormsAreSymbols(symbolValuePairSequence))
-        throw std::invalid_argument("odd forms must be symbols in local bindings");
+        throw CreateException("odd forms must be symbols in local bindings");
     return true;
 };
 
