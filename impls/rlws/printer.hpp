@@ -47,6 +47,8 @@ static constexpr auto ExpandString = [](const auto& s) { return ExpandDoubleQuot
 
 static S PrintString(const RT& rlwsType);
 
+static constexpr auto PrintAFunction = [](const auto& rlwsType) { return S{"#<function>"}; };
+
 static constexpr auto PrintAnInteger = [](const auto& rlwsType) { return std::to_string(T::ValueInteger(rlwsType)); };
 
 static constexpr auto PrintAString = [](const auto& rlwsType)
@@ -75,7 +77,8 @@ static constexpr auto PrintASequence = [](const auto& rlwsType)
 
 using PrintFn = std::function<S(const RT&)>;
 using PrintFnMap = std::unordered_map<RTS, PrintFn>;
-static const auto RLWSTypeToPrintFn{PrintFnMap{{RTS::RLWS_INTEGER, PrintAnInteger},
+static const auto RLWSTypeToPrintFn{PrintFnMap{{RTS::RLWS_FUNCTION, PrintAFunction},
+                                               {RTS::RLWS_INTEGER, PrintAnInteger},
                                                {RTS::RLWS_LIST, PrintASequence},
                                                {RTS::RLWS_MAP, PrintASequence},
                                                {RTS::RLWS_STRING, PrintAString},
