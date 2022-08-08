@@ -11,9 +11,13 @@
 namespace types
 {
 
+static const auto ADD_TOKEN{"+"};
 static const auto DEFBANG_TOKEN{"def!"};
 static const auto DEREF_TOKEN{"@"};
+static const auto DIVIDE_TOKEN{"/"};
 static const auto DO_TOKEN{"do"};
+static const auto FALSE_TOKEN{"false"};
+static const auto IF_TOKEN{"if"};
 static const auto KEYWORD_TOKEN{"\xFF"};
 static const auto LETSTAR_TOKEN{"let*"};
 static const auto LIST_TOKEN_END{")"};
@@ -21,11 +25,15 @@ static const auto LIST_TOKEN_START{"("};
 static const auto MAP_TOKEN_END{"}"};
 static const auto MAP_TOKEN_START{"{"};
 static const auto META_TOKEN{"^"};
+static const auto MULTIPLY_TOKEN{"*"};
+static const auto NIL_TOKEN{"nil"};
 static constexpr auto NOT_FOUND{std::string::npos};
 static const auto QUASI_QUOTE_TOKEN{"`"};
 static const auto QUOTE_TOKEN{"'"};
 static const auto SPLICE_UNQUOTE_TOKEN{"~@"};
 static const auto STRING_CHARACTER_DELIMITER{'"'};
+static const auto SUBTRACT_TOKEN{"-"};
+static const auto TRUE_TOKEN{"true"};
 static const auto UNQUOTE_TOKEN{"~"};
 static const auto VECTOR_TOKEN_END{"]"};
 static const auto VECTOR_TOKEN_START{"["};
@@ -68,6 +76,14 @@ static constexpr auto CreateString = [](const auto& value) { return CreateRLWSTy
 static constexpr auto CreateSymbol = [](const auto& value) { return CreateRLWSType(RLWSTypes::RLWS_SYMBOL, value); };
 static constexpr auto CreateVector = [](const auto& value) { return CreateRLWSType(RLWSTypes::RLWS_VECTOR, value); };
 
+static const auto DefBangSymbol{CreateSymbol(DEFBANG_TOKEN)};
+static const auto DoSymbol{CreateSymbol(DO_TOKEN)};
+static const auto FalseSymbol{CreateSymbol(FALSE_TOKEN)};
+static const auto IfSymbol{CreateSymbol(IF_TOKEN)};
+static const auto LetStarSymbol{CreateSymbol(LETSTAR_TOKEN)};
+static const auto NilSymbol{CreateSymbol(NIL_TOKEN)};
+static const auto TrueSymbol{CreateSymbol(TRUE_TOKEN)};
+
 static constexpr auto IsFunction = [](const auto& rlwsType) { return (RLWSTypes::RLWS_FUNCTION == rlwsType.type); };
 static constexpr auto IsInteger = [](const auto& rlwsType) { return (RLWSTypes::RLWS_INTEGER == rlwsType.type); };
 static constexpr auto IsList = [](const auto& rlwsType) { return (RLWSTypes::RLWS_LIST == rlwsType.type); };
@@ -75,6 +91,10 @@ static constexpr auto IsMap = [](const auto& rlwsType) { return (RLWSTypes::RLWS
 static constexpr auto IsString = [](const auto& rlwsType) { return (RLWSTypes::RLWS_STRING == rlwsType.type); };
 static constexpr auto IsSymbol = [](const auto& rlwsType) { return (RLWSTypes::RLWS_SYMBOL == rlwsType.type); };
 static constexpr auto IsVector = [](const auto& rlwsType) { return (RLWSTypes::RLWS_VECTOR == rlwsType.type); };
+
+static constexpr auto IsFalse = [](const auto& rlwsType) { return (FalseSymbol == rlwsType); };
+static constexpr auto IsNil = [](const auto& rlwsType) { return (NilSymbol == rlwsType); };
+static constexpr auto IsTrue = [](const auto& rlwsType) { return (TrueSymbol == rlwsType); };
 
 static constexpr auto ValueSequence = [](const auto& rlwsType) { return std::get<L>(rlwsType.value); };
 static constexpr auto ValueFunction = [](const auto& rlwsType) { return std::get<F>(rlwsType.value); };
@@ -88,6 +108,12 @@ static constexpr auto ValueVector = [](const auto& rlwsType) { return ValueSeque
 static constexpr auto Count = [](const auto& sequence) { return sequence.size(); };
 static constexpr auto First = [](const auto& sequence) { return sequence[0]; };
 static constexpr auto IsEmpty = [](const auto& sequence) { return (0 == Count(sequence)); };
+
+static constexpr auto EqualSymbols = [](const auto& rhs, const auto& lhs)
+{
+    return ((rhs.type == RLWSTypes::RLWS_SYMBOL) and (lhs.type == RLWSTypes::RLWS_SYMBOL) and
+            (ValueSymbol(rhs) == ValueSymbol(lhs)));
+};
 
 static constexpr auto CreateException = [](const auto& message) { return std::invalid_argument(message); };
 
@@ -115,17 +141,19 @@ static constexpr auto RLWSTypeToString = [](const auto& rlwsType)
 
 static constexpr auto IsDefBang = [](const auto& rlwsType)
 {
+    static constexpr auto DEFBANG_LIST_INDEX{0};
+    static constexpr auto SYMBOL_LIST_INDEX{1};
     if (not IsList(rlwsType))
         return false;
     auto list{ValueList(rlwsType)};
     if (IsEmpty(list))
         return false;
-    auto defBangElement{list[0]};
-    if ((not IsSymbol(defBangElement)) or (DEFBANG_TOKEN != ValueSymbol(defBangElement)))
+    auto defBangElement{list[DEFBANG_LIST_INDEX]};
+    if (not EqualSymbols(DefBangSymbol, defBangElement))
         return false;
     if (3 != Count(list))
         throw CreateException("two arguments required");
-    auto symbolElement(list[1]);
+    auto symbolElement(list[SYMBOL_LIST_INDEX]);
     if (not IsSymbol(symbolElement))
         throw CreateException("first argument must be a symbolElement");
     return true;
@@ -133,17 +161,36 @@ static constexpr auto IsDefBang = [](const auto& rlwsType)
 
 static constexpr auto IsDo = [](const auto& rlwsType)
 {
+    static constexpr auto DO_LIST_INDEX{0};
     if (not IsList(rlwsType))
         return false;
     auto list{ValueList(rlwsType)};
     if (IsEmpty(list))
         return false;
-    auto doElement{list[0]};
-    return (IsSymbol(doElement) and (DO_TOKEN == ValueSymbol(doElement)));
+    auto doElement{list[DO_LIST_INDEX]};
+    return EqualSymbols(DoSymbol, doElement);
+};
+
+static constexpr auto IsIf = [](const auto& rlwsType)
+{
+    static constexpr auto IF_LIST_INDEX{0};
+    if (not IsList(rlwsType))
+        return false;
+    auto list{ValueList(rlwsType)};
+    if (IsEmpty(list))
+        return false;
+    auto ifElement{list[IF_LIST_INDEX]};
+    if (not EqualSymbols(IfSymbol, ifElement))
+        return false;
+    if ((3 != Count(list)) and (4 != Count(list)))
+        throw CreateException("too few arguments to 'if'");
+    return true;
 };
 
 static constexpr auto IsLetStar = [](const auto& rlwsType)
 {
+    static constexpr auto LETSTAR_LIST_INDEX{0};
+    static constexpr auto LOCAL_BINDINGS_LIST_INDEX{1};
     auto IsEven = [](const auto n) { return (0 == (n % 2)); };
     auto AllOddFormsAreSymbols = [](const auto& symbolValuePairSequence)
     {
@@ -162,12 +209,12 @@ static constexpr auto IsLetStar = [](const auto& rlwsType)
     auto list{ValueList(rlwsType)};
     if (IsEmpty(list))
         return false;
-    auto letStarElement{list[0]};
-    if ((not IsSymbol(letStarElement)) or (LETSTAR_TOKEN != ValueSymbol(letStarElement)))
+    auto letStarElement{list[LETSTAR_LIST_INDEX]};
+    if (not EqualSymbols(LetStarSymbol, letStarElement))
         return false;
     if (3 != Count(list))
         throw CreateException("two arguments required");
-    auto localBindingsElement(list[1]);
+    auto localBindingsElement(list[LOCAL_BINDINGS_LIST_INDEX]);
     if (not(IsList(localBindingsElement) or IsVector(localBindingsElement)))
         throw CreateException("local bindings must be a list or a vector");
     auto symbolValuePairSequence{ValueSequence(localBindingsElement)};
