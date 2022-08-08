@@ -56,6 +56,15 @@ static constexpr auto DefBang = [](const auto& rlwsType, auto& e)
     return env::Set(symbol, evaluatedValue, e);
 };
 
+static constexpr auto Do = [](const auto& rlwsType, auto& e)
+{
+    auto list{T::ValueList(rlwsType)};
+    auto result{list[0]};
+    for (auto i{1}; i < T::Count(list); ++i)
+        result = Evaluate(list[i], e);
+    return result;
+};
+
 static constexpr auto LetStar = [](const auto& rlwsType, auto& e)
 {
     auto AddSymbolValuePairsToLocalEnv = [](const auto& symbolValuePairSequence, auto& localEnv)
@@ -79,6 +88,7 @@ static constexpr auto Call = [](const auto& rlwsType, auto& e)
 {
     return T::IsDefBang(rlwsType)   ? DefBang(rlwsType, e)
            : T::IsLetStar(rlwsType) ? LetStar(rlwsType, e)
+           : T::IsDo(rlwsType)      ? Do(rlwsType, e)
                                     : Apply(rlwsType, e);
 };
 

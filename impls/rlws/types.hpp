@@ -13,6 +13,7 @@ namespace types
 
 static const auto DEFBANG_TOKEN{"def!"};
 static const auto DEREF_TOKEN{"@"};
+static const auto DO_TOKEN{"do"};
 static const auto KEYWORD_TOKEN{"\xFF"};
 static const auto LETSTAR_TOKEN{"let*"};
 static const auto LIST_TOKEN_END{")"};
@@ -119,15 +120,26 @@ static constexpr auto IsDefBang = [](const auto& rlwsType)
     auto list{ValueList(rlwsType)};
     if (IsEmpty(list))
         return false;
-    auto defBang{list[0]};
-    if ((not IsSymbol(defBang)) or (DEFBANG_TOKEN != ValueSymbol(defBang)))
+    auto defBangElement{list[0]};
+    if ((not IsSymbol(defBangElement)) or (DEFBANG_TOKEN != ValueSymbol(defBangElement)))
         return false;
     if (3 != Count(list))
         throw CreateException("two arguments required");
-    auto symbol(list[1]);
-    if (not IsSymbol(symbol))
-        throw CreateException("first argument must be a symbol");
+    auto symbolElement(list[1]);
+    if (not IsSymbol(symbolElement))
+        throw CreateException("first argument must be a symbolElement");
     return true;
+};
+
+static constexpr auto IsDo = [](const auto& rlwsType)
+{
+    if (not IsList(rlwsType))
+        return false;
+    auto list{ValueList(rlwsType)};
+    if (IsEmpty(list))
+        return false;
+    auto doElement{list[0]};
+    return (IsSymbol(doElement) and (DO_TOKEN == ValueSymbol(doElement)));
 };
 
 static constexpr auto IsLetStar = [](const auto& rlwsType)
@@ -150,15 +162,15 @@ static constexpr auto IsLetStar = [](const auto& rlwsType)
     auto list{ValueList(rlwsType)};
     if (IsEmpty(list))
         return false;
-    auto letStar{list[0]};
-    if ((not IsSymbol(letStar)) or (LETSTAR_TOKEN != ValueSymbol(letStar)))
+    auto letStarElement{list[0]};
+    if ((not IsSymbol(letStarElement)) or (LETSTAR_TOKEN != ValueSymbol(letStarElement)))
         return false;
     if (3 != Count(list))
         throw CreateException("two arguments required");
-    auto localBindings(list[1]);
-    if (not(IsList(localBindings) or IsVector(localBindings)))
+    auto localBindingsElement(list[1]);
+    if (not(IsList(localBindingsElement) or IsVector(localBindingsElement)))
         throw CreateException("local bindings must be a list or a vector");
-    auto symbolValuePairSequence{ValueSequence(localBindings)};
+    auto symbolValuePairSequence{ValueSequence(localBindingsElement)};
     if (not IsEven(Count(symbolValuePairSequence)))
         throw CreateException("even number of forms required in local bindings");
     if (not AllOddFormsAreSymbols(symbolValuePairSequence))
