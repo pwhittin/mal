@@ -12,14 +12,24 @@ namespace types
 {
 
 static const auto ADD_TOKEN{"+"};
+static const auto COUNT_TOKEN{"count"};
 static const auto DEFBANG_TOKEN{"def!"};
 static const auto DEREF_TOKEN{"@"};
 static const auto DIVIDE_TOKEN{"/"};
 static const auto DO_TOKEN{"do"};
+static const auto EMPTY_Q_TOKEN{"empty?"};
+static const auto EQUAL_TOKEN{"="};
 static const auto FALSE_TOKEN{"false"};
+static const auto FNSTAR_TOKEN{"fn*"};
+static const auto GREATER_THAN_TOKEN{">"};
+static const auto GREATER_THAN_OR_EQUAL_TOKEN{">="};
 static const auto IF_TOKEN{"if"};
 static const auto KEYWORD_TOKEN{"\xFF"};
+static const auto LESS_THAN_TOKEN{"<"};
+static const auto LESS_THAN_OR_EQUAL_TOKEN{"<="};
 static const auto LETSTAR_TOKEN{"let*"};
+static const auto LIST_TOKEN{"list"};
+static const auto LIST_Q_TOKEN{"list?"};
 static const auto LIST_TOKEN_END{")"};
 static const auto LIST_TOKEN_START{"("};
 static const auto MAP_TOKEN_END{"}"};

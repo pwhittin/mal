@@ -42,7 +42,7 @@ static constexpr auto Apply = [](const auto& rlwsType, auto& e)
     auto listEvaluated{T::ValueList(rlwsTypeEvaluated)};
     auto rlwsFunction{T::First(listEvaluated)};
     if (not T::IsFunction(rlwsFunction))
-        throw std::invalid_argument("Call: first arg not a function [" + T::RLWSTypeToString(rlwsFunction) + "]");
+        throw T::CreateException("Apply: first arg not a function [" + T::RLWSTypeToString(rlwsFunction) + "]");
     auto function{T::ValueFunction(rlwsFunction)};
     return function(rlwsTypeEvaluated);
 };
@@ -121,7 +121,8 @@ static constexpr auto Call = [](const auto& rlwsType, auto& e)
            : T::IsLetStar(rlwsType) ? LetStar(rlwsType, e)
            : T::IsDo(rlwsType)      ? Do(rlwsType, e)
            : T::IsIf(rlwsType)      ? If(rlwsType, e)
-                                    : Apply(rlwsType, e);
+                               //           : T::IsFnStar(rlwsType)  ? FnStar(rlwsType, e)
+                               : Apply(rlwsType, e);
 };
 
 static RT Evaluate(const RT& rlwsType, auto& e)
