@@ -88,6 +88,7 @@ static constexpr auto CreateVector = [](const auto& value) { return CreateRLWSTy
 
 static const auto DefBangSymbol{CreateSymbol(DEFBANG_TOKEN)};
 static const auto DoSymbol{CreateSymbol(DO_TOKEN)};
+static const auto FnStarSymbol{CreateSymbol(FNSTAR_TOKEN)};
 static const auto FalseSymbol{CreateSymbol(FALSE_TOKEN)};
 static const auto IfSymbol{CreateSymbol(IF_TOKEN)};
 static const auto LetStarSymbol{CreateSymbol(LETSTAR_TOKEN)};
@@ -165,7 +166,7 @@ static constexpr auto IsDefBang = [](const auto& rlwsType)
         throw CreateException("two arguments required");
     auto symbolElement(list[SYMBOL_LIST_INDEX]);
     if (not IsSymbol(symbolElement))
-        throw CreateException("first argument must be a symbolElement");
+        throw CreateException("first argument must be a symbol");
     return true;
 };
 
@@ -179,6 +180,30 @@ static constexpr auto IsDo = [](const auto& rlwsType)
         return false;
     auto doElement{list[DO_LIST_INDEX]};
     return EqualSymbols(DoSymbol, doElement);
+};
+
+static constexpr auto IsFnStar = [](const auto& rlwsType)
+{
+    static constexpr auto FNSTAR_LIST_INDEX{0};
+    static constexpr auto PARAMS_LIST_INDEX{1};
+    if (not IsList(rlwsType))
+        return false;
+    auto list{ValueList(rlwsType)};
+    if (IsEmpty(list))
+        return false;
+    auto fnStarElement{list[FNSTAR_LIST_INDEX]};
+    if (not EqualSymbols(FnStarSymbol, fnStarElement))
+        return false;
+    if (3 != Count(list))
+        throw CreateException("parameters and form required");
+    auto paramsElement(list[PARAMS_LIST_INDEX]);
+    if (not(IsList(paramsElement) or IsVector(paramsElement)))
+        throw CreateException("parameters must be a list or vector");
+    auto paramsList{ValueSequence(paramsElement)};
+    for (const auto& param : paramsList)
+        if (not IsSymbol(param))
+            throw CreateException("all parameters must be symbols");
+    return true;
 };
 
 static constexpr auto IsIf = [](const auto& rlwsType)

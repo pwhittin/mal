@@ -33,6 +33,18 @@ static constexpr auto EnvSet = [](const auto& rlwsSymbol, const auto& rlwsType, 
     return rlwsType;
 };
 
+static constexpr auto EnvCreateWithBindsAndExprs =
+    [](Env* const outerEnv, const auto& bindsSequence, const auto& exprsSequence)
+{
+    auto result{EnvCreate(outerEnv)};
+    auto binds{T::ValueSequence(bindsSequence)};
+    auto exprs{T::ValueSequence(exprsSequence)};
+    auto n{T::Count(binds)};
+    for (auto i{0}; i < n; ++i)
+        EnvSet(binds[i], exprs[i], result);
+    return result;
+};
+
 static Env EnvFind(const auto& rlwsSymbol, const auto& e)
 {
     auto symbol{T::ValueSymbol(rlwsSymbol)};
@@ -130,8 +142,6 @@ static const auto SubtractFn = [](const auto& argList)
 namespace env
 {
 
-static constexpr auto Create{EnvCreate};
-
 static auto repl_env{Env{}};
 static constexpr auto Init = []()
 {
@@ -144,6 +154,8 @@ static constexpr auto Init = []()
     EnvSet(T::CreateSymbol(T::TRUE_TOKEN), T::TrueSymbol, repl_env);
 };
 
+static constexpr auto Create{EnvCreate};
+static constexpr auto CreateWithBindsAndExprs{EnvCreateWithBindsAndExprs};
 static constexpr auto Get{EnvGet};
 static constexpr auto Set{EnvSet};
 
