@@ -65,92 +65,14 @@ static constexpr auto EnvGet = [](const auto& rlwsSymbol, const auto& e)
     return eFoundPair->second;
 };
 
-static constexpr auto GenericInteger = [](const auto& fnName)
-{
-    return [fnName](const auto& rlwsType)
-    {
-        if (not T::IsInteger(rlwsType))
-            throw T::CreateException(S{fnName} + ": non-integer arg [" + T::RLWSTypeToString(rlwsType) + "]");
-        auto result{T::ValueInteger(rlwsType)};
-        return result;
-    };
-};
-
-static const auto CreateInteger = [](const auto& value) { return T::CreateRLWSType(RTS::RLWS_INTEGER, value); };
-
-static const auto AddFn = [](const auto& argList)
-{
-    // the first element of argList is the function value
-    static constexpr auto Integer{GenericInteger("+")};
-    auto result{I{0}};
-    auto args{T::ValueList(argList)};
-    auto argCount{T::Count(args)};
-    for (auto i{1}; i < argCount; ++i)
-        result += Integer(args[i]);
-    return CreateInteger(result);
-};
-
-static const auto DivideFn = [](const auto& argList)
-{
-    // the first element of argList is the function value
-    static constexpr auto Integer{GenericInteger("/")};
-    auto args{T::ValueList(argList)};
-    auto argCount{T::Count(args)};
-    if (1 == argCount)
-        throw T::CreateException("/: Wrong number of args (0)");
-    if (2 == argCount)
-        return CreateInteger(0);
-    auto result{Integer(args[1])};
-    for (auto i{2}; i < argCount; ++i)
-    {
-        auto divisor{Integer(args[i])};
-        if (I{0} == divisor)
-            throw T::CreateException("/: Division by zero");
-        result /= divisor;
-    }
-    return CreateInteger(result);
-};
-
-static const auto MultiplyFn = [](const auto& argList)
-{
-    // the first element of argList is the function value
-    static constexpr auto Integer{GenericInteger("*")};
-    auto result{I{1}};
-    auto args{T::ValueList(argList)};
-    auto argCount{T::Count(args)};
-    for (auto i{1}; i < argCount; ++i)
-        result *= Integer(args[i]);
-    return CreateInteger(result);
-};
-
-static const auto SubtractFn = [](const auto& argList)
-{
-    // the first element of argList is the function value
-    static constexpr auto Integer{GenericInteger("-")};
-    auto args{T::ValueList(argList)};
-    auto argCount{T::Count(args)};
-    if (1 == argCount)
-        throw T::CreateException("/: Wrong number of args (0)");
-    if (2 == argCount)
-        return CreateInteger(-Integer(args[1]));
-    auto result{Integer(args[1])};
-    for (auto i{2}; i < argCount; ++i)
-        result -= Integer(args[i]);
-    return CreateInteger(result);
-};
-
 namespace env
 {
 
 static auto repl_env{Env{}};
 static constexpr auto Init = []()
 {
-    EnvSet(T::CreateSymbol(T::ADD_TOKEN), T::CreateFunction(AddFn), repl_env);
     EnvSet(T::CreateSymbol(T::FALSE_TOKEN), T::FalseSymbol, repl_env);
-    EnvSet(T::CreateSymbol(T::DIVIDE_TOKEN), T::CreateFunction(DivideFn), repl_env);
-    EnvSet(T::CreateSymbol(T::MULTIPLY_TOKEN), T::CreateFunction(MultiplyFn), repl_env);
     EnvSet(T::CreateSymbol(T::NIL_TOKEN), T::NilSymbol, repl_env);
-    EnvSet(T::CreateSymbol(T::SUBTRACT_TOKEN), T::CreateFunction(SubtractFn), repl_env);
     EnvSet(T::CreateSymbol(T::TRUE_TOKEN), T::TrueSymbol, repl_env);
 };
 

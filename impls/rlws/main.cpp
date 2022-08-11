@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "core.hpp"
 #include "eval.hpp"
 #include "printer.hpp"
 #include "reader.hpp"
@@ -26,6 +27,7 @@ const auto IsEOF = [](const auto& in) noexcept { return in.eof(); };
 int main()
 {
     env::Init();
+    core::AddToEnv(core::ns, env::repl_env);
     while (not IsEOF(std::cin))
     {
         std::cout << PROMPT;
