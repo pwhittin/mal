@@ -10,7 +10,7 @@
 
 auto READ = [](const auto& s) { return reader::ReadStr(s); };
 auto EVAL = [](const auto& rlwsType) { return eval::Eval(rlwsType); };
-auto PRINT = [](const auto& rlwsType) { return printer::PrintStr(rlwsType); };
+auto PRINT = [](const auto& rlwsType) { return printer::PrintStr(rlwsType, true); };
 auto rep = [](const auto& s) { return PRINT(EVAL(READ(s))); };
 
 static const auto PROMPT{types::S{"user> "}};

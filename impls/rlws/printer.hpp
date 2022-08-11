@@ -45,29 +45,33 @@ static constexpr auto ExpandNewline = [](const auto& s) { return ExpandGeneric(s
 static constexpr auto ExpandBackslash = [](const auto& s) { return ExpandGeneric(s, "\\", "\\\\"); };
 static constexpr auto ExpandString = [](const auto& s) { return ExpandDoubleQuote(ExpandNewline(ExpandBackslash(s))); };
 
-static S PrintString(const RT& rlwsType);
+static S PrintString(const RT& rlwsType, const bool printReadably);
 
-static constexpr auto PrintAFunction = [](const auto& rlwsType) { return S{"#<function>"}; };
+static constexpr auto PrintAFunction = [](const auto& rlwsType, const auto printReadably) { return S{"#<function>"}; };
 
-static constexpr auto PrintAnInteger = [](const auto& rlwsType) { return std::to_string(T::ValueInteger(rlwsType)); };
+static constexpr auto PrintAnInteger = [](const auto& rlwsType, const auto printReadably)
+{ return std::to_string(T::ValueInteger(rlwsType)); };
 
-static constexpr auto PrintAString = [](const auto& rlwsType)
+static constexpr auto PrintAString = [](const auto& rlwsType, const auto printReadably)
 {
     auto s{T::ValueString(rlwsType)};
     if (s.starts_with(T::KEYWORD_TOKEN))
         return ":" + s.substr(1);
-    return "\"" + ExpandString(s) + "\"";
+    if (printReadably)
+        return "\"" + ExpandString(s) + "\"";
+    return s;
 };
 
-static constexpr auto PrintASymbol = [](const auto& rlwsType) { return T::ValueSymbol(rlwsType); };
+static constexpr auto PrintASymbol = [](const auto& rlwsType, const auto printReadably)
+{ return T::ValueSymbol(rlwsType); };
 
-static constexpr auto PrintASequence = [](const auto& rlwsType)
+static constexpr auto PrintASequence = [](const auto& rlwsType, const auto printReadably)
 {
     auto [startToken, endToken]{SequenceTokens(rlwsType.type)};
     auto sequence{T::ValueSequence(rlwsType)};
     auto result{S{startToken}};
     for (const auto& v : sequence)
-        result += PrintString(v) + " ";
+        result += PrintString(v, true) + " ";
     if (' ' == result.back())
         result.back() = endToken[0];
     else
@@ -75,7 +79,7 @@ static constexpr auto PrintASequence = [](const auto& rlwsType)
     return result;
 };
 
-using PrintFn = std::function<S(const RT&)>;
+using PrintFn = std::function<S(const RT&, const bool printReadably)>;
 using PrintFnMap = std::unordered_map<RTS, PrintFn>;
 static const auto RLWSTypeToPrintFn{PrintFnMap{{RTS::RLWS_FUNCTION, PrintAFunction},
                                                {RTS::RLWS_INTEGER, PrintAnInteger},
@@ -84,15 +88,16 @@ static const auto RLWSTypeToPrintFn{PrintFnMap{{RTS::RLWS_FUNCTION, PrintAFuncti
                                                {RTS::RLWS_STRING, PrintAString},
                                                {RTS::RLWS_SYMBOL, PrintASymbol},
                                                {RTS::RLWS_VECTOR, PrintASequence}}};
-static S PrintString(const RT& rlwsType)
+static S PrintString(const RT& rlwsType, const bool printReadably)
 {
-    return RLWSTypeToPrintFn.find(rlwsType.type)->second(rlwsType);
+    return RLWSTypeToPrintFn.find(rlwsType.type)->second(rlwsType, printReadably);
 }
 
 namespace printer
 {
 
-static constexpr auto PrintStr = [](const auto& rlwsType) { return PrintString(rlwsType); };
+static constexpr auto PrintStr = [](const auto& rlwsType, const auto printReadably)
+{ return PrintString(rlwsType, printReadably); };
 
 } // namespace printer
 

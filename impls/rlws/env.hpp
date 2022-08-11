@@ -68,12 +68,16 @@ static constexpr auto EnvGet = [](const auto& rlwsSymbol, const auto& e)
 namespace env
 {
 
+static const auto FalseSymbol{T::CreateSymbol(T::FALSE_TOKEN)};
+static const auto NilSymbol{T::CreateSymbol(T::NIL_TOKEN)};
+static const auto TrueSymbol{T::CreateSymbol(T::TRUE_TOKEN)};
+
 static auto repl_env{Env{}};
 static constexpr auto Init = []()
 {
-    EnvSet(T::CreateSymbol(T::FALSE_TOKEN), T::FalseSymbol, repl_env);
-    EnvSet(T::CreateSymbol(T::NIL_TOKEN), T::NilSymbol, repl_env);
-    EnvSet(T::CreateSymbol(T::TRUE_TOKEN), T::TrueSymbol, repl_env);
+    EnvSet(FalseSymbol, T::FalseSymbol, repl_env);
+    EnvSet(NilSymbol, T::NilSymbol, repl_env);
+    EnvSet(TrueSymbol, T::TrueSymbol, repl_env);
 };
 
 static constexpr auto Create{EnvCreate};

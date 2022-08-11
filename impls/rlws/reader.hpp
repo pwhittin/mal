@@ -177,7 +177,7 @@ static constexpr auto GenericReaderMacroFn = [](auto& tokens, const auto& errorM
 {
     Next(tokens); // eat the reader macro token
     auto nextForm{ReadForm(tokens)};
-    auto nextFormString{printer::PrintStr(nextForm)};
+    auto nextFormString{printer::PrintStr(nextForm, true)};
     if (nextFormString.empty())
         throw T::CreateException(errorMessage);
     auto insertString{S{"("} + fnName + " " + nextFormString + ")"};
@@ -194,9 +194,9 @@ static constexpr auto MetaReaderMacroFn = [](Tokens& tokens)
     auto metaForm{ReadForm(tokens)};
     if (RTS::RLWS_MAP != metaForm.type)
         throw T::CreateException("expected 'map' form after 'meta'");
-    auto metaFormString{printer::PrintStr(metaForm)};
+    auto metaFormString{printer::PrintStr(metaForm, true)};
     auto nextForm{ReadForm(tokens)};
-    auto nextFormString{printer::PrintStr(nextForm)};
+    auto nextFormString{printer::PrintStr(nextForm, true)};
     if (nextFormString.empty())
         throw T::CreateException("expected form after 'meta' form, got EOF");
     auto insertString{S{"(with-meta "} + nextFormString + " " + metaFormString + ")"};
