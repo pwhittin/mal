@@ -31,7 +31,7 @@ static constexpr auto GenericInteger = [](const auto& fnName)
 static const auto AddFn = [](const auto& argList)
 {
     // the first element of argList is the function value
-    static constexpr auto Integer{GenericInteger("+")};
+    static const auto Integer{GenericInteger(T::ADD_TOKEN)};
     auto result{I{0}};
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
@@ -40,10 +40,26 @@ static const auto AddFn = [](const auto& argList)
     return T::CreateInteger(result);
 };
 
+static const auto CountFn = [](const auto& argList)
+{
+    // the first element of argList is the function value
+    static const auto fnName{T::S{T::COUNT_TOKEN}};
+    auto args{T::ValueList(argList)};
+    auto argCount{T::Count(args)};
+    if (2 != argCount)
+        throw T::CreateException(fnName + ": Wrong number of args (" + std::to_string(argCount - 1) + ")");
+    auto parameter{args[1]};
+    if (not T::IsList(parameter))
+        throw T::CreateException(fnName + ": Parameter must be a list");
+    auto parameterList{T::ValueList(parameter)};
+    auto parameterCount{T::Count(parameterList)};
+    return T::CreateInteger(parameterCount);
+};
+
 static const auto DivideFn = [](const auto& argList)
 {
     // the first element of argList is the function value
-    static constexpr auto Integer{GenericInteger("/")};
+    static const auto Integer{GenericInteger(T::DIVIDE_TOKEN)};
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
     if (1 == argCount)
@@ -64,13 +80,14 @@ static const auto DivideFn = [](const auto& argList)
 static const auto EmptyQFn = [](const auto& argList)
 {
     // the first element of argList is the function value
+    static const auto fnName{T::S{T::EMPTY_Q_TOKEN}};
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
     if (2 != argCount)
-        throw T::CreateException("/: Wrong number of args (" + std::to_string(argCount - 1) + ")");
+        throw T::CreateException(fnName + ": Wrong number of args (" + std::to_string(argCount - 1) + ")");
     auto parameter{args[1]};
     if (not T::IsList(parameter))
-        throw T::CreateException("/: Parameter must be a list");
+        throw T::CreateException(fnName + ": Parameter must be a list");
     auto parameterList{T::ValueList(parameter)};
     auto parameterCount{T::Count(parameterList)};
     return (0 == parameterCount) ? T::TrueSymbol : T::FalseSymbol;
@@ -90,17 +107,18 @@ static const auto ListFn = [](const auto& argList)
 static const auto ListQFn = [](const auto& argList)
 {
     // the first element of argList is the function value
+    static const auto fnName{T::S{T::LIST_Q_TOKEN}};
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
     if (2 != argCount)
-        throw T::CreateException("/: Wrong number of args (" + std::to_string(argCount - 1) + ")");
+        throw T::CreateException(fnName + ": Wrong number of args (" + std::to_string(argCount - 1) + ")");
     return T::IsList(args[1]) ? T::TrueSymbol : T::FalseSymbol;
 };
 
 static const auto MultiplyFn = [](const auto& argList)
 {
     // the first element of argList is the function value
-    static constexpr auto Integer{GenericInteger("*")};
+    static const auto Integer{GenericInteger(T::MULTIPLY_TOKEN)};
     auto result{I{1}};
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
@@ -176,11 +194,12 @@ static const auto StrFn = [](const auto& argList)
 static const auto SubtractFn = [](const auto& argList)
 {
     // the first element of argList is the function value
-    static constexpr auto Integer{GenericInteger("-")};
+    static const auto fnName{T::S{T::SUBTRACT_TOKEN}};
+    static const auto Integer{GenericInteger(T::SUBTRACT_TOKEN)};
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
     if (1 == argCount)
-        throw T::CreateException("/: Wrong number of args (0)");
+        throw T::CreateException(fnName + ": Wrong number of args (0)");
     if (2 == argCount)
         return T::CreateInteger(-Integer(args[1]));
     auto result{Integer(args[1])};
@@ -207,6 +226,7 @@ namespace core
 
 static constexpr auto SFP{NsCreateSymbolFunctionPair};
 static auto ns{Ns{SFP(T::ADD_TOKEN, AddFn),
+                  SFP(T::COUNT_TOKEN, CountFn),
                   SFP(T::DIVIDE_TOKEN, DivideFn),
                   SFP(T::EMPTY_Q_TOKEN, EmptyQFn),
                   SFP(T::LIST_TOKEN, ListFn),

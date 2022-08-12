@@ -120,7 +120,7 @@ static constexpr auto ValueString = [](const auto& rlwsType) { return std::get<S
 static constexpr auto ValueSymbol = [](const auto& rlwsType) { return ValueString(rlwsType); };
 static constexpr auto ValueVector = [](const auto& rlwsType) { return ValueSequence(rlwsType); };
 
-static constexpr auto Count = [](const auto& sequence) { return sequence.size(); };
+static constexpr auto Count = [](const auto& sequence) { return static_cast<I>(sequence.size()); };
 static constexpr auto First = [](const auto& sequence) { return sequence[0]; };
 static constexpr auto IsEmpty = [](const auto& sequence) { return (0 == Count(sequence)); };
 
