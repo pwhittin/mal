@@ -64,6 +64,8 @@ static constexpr auto CountFn = [](const auto& argList)
     if (2 != argCount)
         throw T::CreateException(fnName + ": Wrong number of args (" + std::to_string(argCount - 1) + ")");
     auto parameter{args[1]};
+    if (T::EqualSymbols(parameter, T::NilSymbol))
+        return T::CreateInteger(0);
     if (not T::IsList(parameter))
         throw T::CreateException(fnName + ": Parameter must be a list");
     auto parameterList{T::ValueList(parameter)};
