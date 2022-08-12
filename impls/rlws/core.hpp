@@ -24,7 +24,7 @@ static constexpr auto GenericInteger = [](const auto& fnName)
     return [fnName](const auto& rlwsType)
     {
         if (not T::IsInteger(rlwsType))
-            throw T::CreateException(S{fnName} + ": non-integer arg [" + T::RLWSTypeToString(rlwsType) + "]");
+            throw T::CreateException(fnName + ": non-integer arg [" + T::RLWSTypeToString(rlwsType) + "]");
         auto result{T::ValueInteger(rlwsType)};
         return result;
     };
@@ -39,15 +39,14 @@ static constexpr auto GenericRelationalIntegerFn = [](const auto& argList, const
         throw T::CreateException(fnName + ": Wrong number of args (" + std::to_string(argCount - 1) + ")");
     auto parameter1{args[1]};
     auto parameter2{args[2]};
-    if ((RTS::RLWS_INTEGER != parameter1.type) or (RTS::RLWS_INTEGER != parameter2.type))
-        throw T::CreateException(fnName + ": Arguments must be integers");
-    return std::pair<RT, RT>{parameter1, parameter2};
+    auto Integer{GenericInteger(fnName)};
+    return std::pair<RT, RT>{T::CreateInteger(Integer(parameter1)), T::CreateInteger(Integer(parameter2))};
 };
 
 static constexpr auto AddFn = [](const auto& argList)
 {
     // the first element of argList is the function value
-    static const auto Integer{GenericInteger(T::ADD_TOKEN)};
+    static const auto Integer{GenericInteger(S{T::ADD_TOKEN})};
     auto result{I{0}};
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
@@ -75,7 +74,7 @@ static constexpr auto CountFn = [](const auto& argList)
 static constexpr auto DivideFn = [](const auto& argList)
 {
     // the first element of argList is the function value
-    static const auto Integer{GenericInteger(T::DIVIDE_TOKEN)};
+    static const auto Integer{GenericInteger(S{T::DIVIDE_TOKEN})};
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
     if (1 == argCount)
@@ -122,6 +121,20 @@ static constexpr auto EqualFn = [](const auto& argList)
     return T::EqualRLWSTypes(parameter1, parameter2);
 };
 
+static constexpr auto GreaterThanFn = [](const auto& argList)
+{
+    static const auto fnName{S{T::LESS_THAN_TOKEN}};
+    auto [parameter1, parameter2]{GenericRelationalIntegerFn(argList, fnName)};
+    return TrueOrFalse(T::ValueInteger(parameter1) > T::ValueInteger(parameter2));
+};
+
+static constexpr auto GreaterThanOrEqualFn = [](const auto& argList)
+{
+    static const auto fnName{S{T::LESS_THAN_TOKEN}};
+    auto [parameter1, parameter2]{GenericRelationalIntegerFn(argList, fnName)};
+    return TrueOrFalse(T::ValueInteger(parameter1) >= T::ValueInteger(parameter2));
+};
+
 static constexpr auto LessThanFn = [](const auto& argList)
 {
     static const auto fnName{S{T::LESS_THAN_TOKEN}};
@@ -161,7 +174,7 @@ static constexpr auto ListQFn = [](const auto& argList)
 static constexpr auto MultiplyFn = [](const auto& argList)
 {
     // the first element of argList is the function value
-    static const auto Integer{GenericInteger(T::MULTIPLY_TOKEN)};
+    static const auto Integer{GenericInteger(S{T::MULTIPLY_TOKEN})};
     auto result{I{1}};
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
@@ -238,7 +251,7 @@ static constexpr auto SubtractFn = [](const auto& argList)
 {
     // the first element of argList is the function value
     static const auto fnName{S{T::SUBTRACT_TOKEN}};
-    static const auto Integer{GenericInteger(T::SUBTRACT_TOKEN)};
+    static const auto Integer{GenericInteger(S{T::SUBTRACT_TOKEN})};
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
     if (1 == argCount)
@@ -273,6 +286,8 @@ static auto ns{Ns{SFP(T::ADD_TOKEN, AddFn),
                   SFP(T::DIVIDE_TOKEN, DivideFn),
                   SFP(T::EMPTY_Q_TOKEN, EmptyQFn),
                   SFP(T::EQUAL_TOKEN, EqualFn),
+                  SFP(T::GREATER_THAN_TOKEN, GreaterThanFn),
+                  SFP(T::GREATER_THAN_OR_EQUAL_TOKEN, GreaterThanOrEqualFn),
                   SFP(T::LESS_THAN_TOKEN, LessThanFn),
                   SFP(T::LESS_THAN_OR_EQUAL_TOKEN, LessThanOrEqualFn),
                   SFP(T::LIST_TOKEN, ListFn),
