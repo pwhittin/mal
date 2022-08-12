@@ -106,6 +106,21 @@ static constexpr auto EqualFn = [](const auto& argList)
     return T::EqualRLWSTypes(parameter1, parameter2);
 };
 
+static constexpr auto LessThanFn = [](const auto& argList)
+{
+    // the first element of argList is the function value
+    static const auto fnName{T::S{T::LESS_THAN_TOKEN}};
+    auto args{T::ValueList(argList)};
+    auto argCount{T::Count(args)};
+    if (3 != argCount)
+        throw T::CreateException(fnName + ": Wrong number of args (" + std::to_string(argCount - 1) + ")");
+    auto parameter1{args[1]};
+    auto parameter2{args[2]};
+    if ((RTS::RLWS_INTEGER != parameter1.type) or (RTS::RLWS_INTEGER != parameter2.type))
+        throw T::CreateException(fnName + ": Arguments must be integers");
+    return (T::ValueInteger(parameter1) < T::ValueInteger(parameter2)) ? T::TrueSymbol : T::FalseSymbol;
+};
+
 static constexpr auto ListFn = [](const auto& argList)
 {
     // the first element of argList is the function value
@@ -243,6 +258,7 @@ static auto ns{Ns{SFP(T::ADD_TOKEN, AddFn),
                   SFP(T::DIVIDE_TOKEN, DivideFn),
                   SFP(T::EMPTY_Q_TOKEN, EmptyQFn),
                   SFP(T::EQUAL_TOKEN, EqualFn),
+                  SFP(T::LESS_THAN_TOKEN, LessThanFn),
                   SFP(T::LIST_TOKEN, ListFn),
                   SFP(T::LIST_Q_TOKEN, ListQFn),
                   SFP(T::MULTIPLY_TOKEN, MultiplyFn),
