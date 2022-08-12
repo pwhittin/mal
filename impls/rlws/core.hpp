@@ -17,6 +17,8 @@ using L = T::L;
 using RT = T::RLWSType;
 using S = T::S;
 
+static constexpr auto TrueOrFalse = [](const bool tOrF) { return tOrF ? T::TrueSymbol : T::FalseSymbol; };
+
 static constexpr auto GenericInteger = [](const auto& fnName)
 {
     return [fnName](const auto& rlwsType)
@@ -26,6 +28,20 @@ static constexpr auto GenericInteger = [](const auto& fnName)
         auto result{T::ValueInteger(rlwsType)};
         return result;
     };
+};
+
+static constexpr auto GenericRelationalIntegerFn = [](const auto& argList, const auto& fnName)
+{
+    // the first element of argList is the function value
+    auto args{T::ValueList(argList)};
+    auto argCount{T::Count(args)};
+    if (3 != argCount)
+        throw T::CreateException(fnName + ": Wrong number of args (" + std::to_string(argCount - 1) + ")");
+    auto parameter1{args[1]};
+    auto parameter2{args[2]};
+    if ((RTS::RLWS_INTEGER != parameter1.type) or (RTS::RLWS_INTEGER != parameter2.type))
+        throw T::CreateException(fnName + ": Arguments must be integers");
+    return std::pair<RT, RT>{parameter1, parameter2};
 };
 
 static constexpr auto AddFn = [](const auto& argList)
@@ -43,7 +59,7 @@ static constexpr auto AddFn = [](const auto& argList)
 static constexpr auto CountFn = [](const auto& argList)
 {
     // the first element of argList is the function value
-    static const auto fnName{T::S{T::COUNT_TOKEN}};
+    static const auto fnName{S{T::COUNT_TOKEN}};
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
     if (2 != argCount)
@@ -80,7 +96,7 @@ static constexpr auto DivideFn = [](const auto& argList)
 static constexpr auto EmptyQFn = [](const auto& argList)
 {
     // the first element of argList is the function value
-    static const auto fnName{T::S{T::EMPTY_Q_TOKEN}};
+    static const auto fnName{S{T::EMPTY_Q_TOKEN}};
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
     if (2 != argCount)
@@ -90,13 +106,13 @@ static constexpr auto EmptyQFn = [](const auto& argList)
         throw T::CreateException(fnName + ": Parameter must be a list");
     auto parameterList{T::ValueList(parameter)};
     auto parameterCount{T::Count(parameterList)};
-    return (0 == parameterCount) ? T::TrueSymbol : T::FalseSymbol;
+    return TrueOrFalse(0 == parameterCount);
 };
 
 static constexpr auto EqualFn = [](const auto& argList)
 {
     // the first element of argList is the function value
-    static const auto fnName{T::S{T::EQUAL_TOKEN}};
+    static const auto fnName{S{T::EQUAL_TOKEN}};
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
     if (3 != argCount)
@@ -108,17 +124,16 @@ static constexpr auto EqualFn = [](const auto& argList)
 
 static constexpr auto LessThanFn = [](const auto& argList)
 {
-    // the first element of argList is the function value
-    static const auto fnName{T::S{T::LESS_THAN_TOKEN}};
-    auto args{T::ValueList(argList)};
-    auto argCount{T::Count(args)};
-    if (3 != argCount)
-        throw T::CreateException(fnName + ": Wrong number of args (" + std::to_string(argCount - 1) + ")");
-    auto parameter1{args[1]};
-    auto parameter2{args[2]};
-    if ((RTS::RLWS_INTEGER != parameter1.type) or (RTS::RLWS_INTEGER != parameter2.type))
-        throw T::CreateException(fnName + ": Arguments must be integers");
-    return (T::ValueInteger(parameter1) < T::ValueInteger(parameter2)) ? T::TrueSymbol : T::FalseSymbol;
+    static const auto fnName{S{T::LESS_THAN_TOKEN}};
+    auto [parameter1, parameter2]{GenericRelationalIntegerFn(argList, fnName)};
+    return TrueOrFalse(T::ValueInteger(parameter1) < T::ValueInteger(parameter2));
+};
+
+static constexpr auto LessThanOrEqualFn = [](const auto& argList)
+{
+    static const auto fnName{S{T::LESS_THAN_TOKEN}};
+    auto [parameter1, parameter2]{GenericRelationalIntegerFn(argList, fnName)};
+    return TrueOrFalse(T::ValueInteger(parameter1) <= T::ValueInteger(parameter2));
 };
 
 static constexpr auto ListFn = [](const auto& argList)
@@ -135,7 +150,7 @@ static constexpr auto ListFn = [](const auto& argList)
 static constexpr auto ListQFn = [](const auto& argList)
 {
     // the first element of argList is the function value
-    static const auto fnName{T::S{T::LIST_Q_TOKEN}};
+    static const auto fnName{S{T::LIST_Q_TOKEN}};
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
     if (2 != argCount)
@@ -160,7 +175,7 @@ static constexpr auto PrStrFn = [](const auto& argList)
     // the first element of argList is the function value
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
-    auto result{T::S{""}};
+    auto result{S{""}};
     for (auto i{1}; i < argCount; ++i)
     {
         auto argS{P::PrintStr(args[i], true)};
@@ -176,7 +191,7 @@ static constexpr auto PrintlnFn = [](const auto& argList)
     // the first element of argList is the function value
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
-    auto s{T::S{""}};
+    auto s{S{""}};
     for (auto i{1}; i < argCount; ++i)
     {
         auto argS{P::PrintStr(args[i], false)};
@@ -193,7 +208,7 @@ static constexpr auto PrnFn = [](const auto& argList)
     // the first element of argList is the function value
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
-    auto s{T::S{""}};
+    auto s{S{""}};
     for (auto i{1}; i < argCount; ++i)
     {
         auto argS{P::PrintStr(args[i], true)};
@@ -210,7 +225,7 @@ static constexpr auto StrFn = [](const auto& argList)
     // the first element of argList is the function value
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
-    auto result{T::S{""}};
+    auto result{S{""}};
     for (auto i{1}; i < argCount; ++i)
     {
         auto argS{P::PrintStr(args[i], false)};
@@ -222,7 +237,7 @@ static constexpr auto StrFn = [](const auto& argList)
 static constexpr auto SubtractFn = [](const auto& argList)
 {
     // the first element of argList is the function value
-    static const auto fnName{T::S{T::SUBTRACT_TOKEN}};
+    static const auto fnName{S{T::SUBTRACT_TOKEN}};
     static const auto Integer{GenericInteger(T::SUBTRACT_TOKEN)};
     auto args{T::ValueList(argList)};
     auto argCount{T::Count(args)};
@@ -259,6 +274,7 @@ static auto ns{Ns{SFP(T::ADD_TOKEN, AddFn),
                   SFP(T::EMPTY_Q_TOKEN, EmptyQFn),
                   SFP(T::EQUAL_TOKEN, EqualFn),
                   SFP(T::LESS_THAN_TOKEN, LessThanFn),
+                  SFP(T::LESS_THAN_OR_EQUAL_TOKEN, LessThanOrEqualFn),
                   SFP(T::LIST_TOKEN, ListFn),
                   SFP(T::LIST_Q_TOKEN, ListQFn),
                   SFP(T::MULTIPLY_TOKEN, MultiplyFn),

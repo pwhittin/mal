@@ -175,6 +175,10 @@ static RLWSType EqualRLWSTypes(const auto& rhs, const auto& lhs)
         return EqualRLWSStrings(lhs, rhs);
     case RLWSTypes::RLWS_SYMBOL:
         return EqualRLWSSymbols(lhs, rhs);
+    case RLWSTypes::RLWS_LIST:
+    case RLWSTypes::RLWS_MAP:
+    case RLWSTypes::RLWS_VECTOR:
+        break;
     }
     // sequence (i.e., list, map or vector) comparison
     auto rhsSequence{ValueSequence(rhs)};
