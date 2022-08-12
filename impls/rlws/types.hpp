@@ -55,6 +55,7 @@ static const auto VECTOR_TOKEN_START{"["};
 struct RLWSType;
 
 using F = std::function<RLWSType(const RLWSType&)>;
+using F = std::function<RLWSType(const RLWSType&)>;
 using I = intmax_t;
 using L = std::vector<RLWSType>;
 using S = std::string;
@@ -107,6 +108,9 @@ static constexpr auto IsString = [](const auto& rlwsType) { return (RLWSTypes::R
 static constexpr auto IsSymbol = [](const auto& rlwsType) { return (RLWSTypes::RLWS_SYMBOL == rlwsType.type); };
 static constexpr auto IsVector = [](const auto& rlwsType) { return (RLWSTypes::RLWS_VECTOR == rlwsType.type); };
 
+static constexpr auto IsSequence = [](const auto& rlwsType)
+{ return (IsList(rlwsType) or IsMap(rlwsType) or IsVector(rlwsType)); };
+
 static constexpr auto IsFalse = [](const auto& rlwsType) { return (FalseSymbol == rlwsType); };
 static constexpr auto IsNil = [](const auto& rlwsType) { return (NilSymbol == rlwsType); };
 static constexpr auto IsTrue = [](const auto& rlwsType) { return (TrueSymbol == rlwsType); };
@@ -129,6 +133,64 @@ static constexpr auto EqualSymbols = [](const auto& rhs, const auto& lhs)
     return ((rhs.type == RLWSTypes::RLWS_SYMBOL) and (lhs.type == RLWSTypes::RLWS_SYMBOL) and
             (ValueSymbol(rhs) == ValueSymbol(lhs)));
 };
+
+static constexpr auto EqualRLWSFunctions = [](const auto& rhs, const auto& lhs)
+{
+    // for now don't know how to compare functions
+    return FalseSymbol;
+};
+
+static constexpr auto EqualRLWSIntegers = [](const auto& rhs, const auto& lhs)
+{
+    auto lhsValue{ValueInteger(lhs)};
+    auto rhsValue{ValueInteger(rhs)};
+    return (lhsValue == rhsValue) ? TrueSymbol : FalseSymbol;
+};
+
+static constexpr auto EqualRLWSStrings = [](const auto& rhs, const auto& lhs)
+{
+    auto lhsValue{ValueString(lhs)};
+    auto rhsValue{ValueString(rhs)};
+    return (lhsValue == rhsValue) ? TrueSymbol : FalseSymbol;
+};
+
+static constexpr auto EqualRLWSSymbols = [](const auto& rhs, const auto& lhs)
+{
+    auto lhsValue{ValueSymbol(lhs)};
+    auto rhsValue{ValueSymbol(rhs)};
+    return (lhsValue == rhsValue) ? TrueSymbol : FalseSymbol;
+};
+
+static RLWSType EqualRLWSTypes(const auto& rhs, const auto& lhs)
+{
+    if (rhs.type != lhs.type)
+        return FalseSymbol;
+    switch (rhs.type)
+    {
+    case RLWSTypes::RLWS_FUNCTION:
+        return EqualRLWSFunctions(lhs, rhs);
+    case RLWSTypes::RLWS_INTEGER:
+        return EqualRLWSIntegers(lhs, rhs);
+    case RLWSTypes::RLWS_STRING:
+        return EqualRLWSStrings(lhs, rhs);
+    case RLWSTypes::RLWS_SYMBOL:
+        return EqualRLWSSymbols(lhs, rhs);
+    }
+    // sequence (i.e., list, map or vector) comparison
+    auto rhsSequence{ValueSequence(rhs)};
+    auto lhsSequence{ValueSequence(lhs)};
+    auto rhsSequenceCount{Count(rhsSequence)};
+    auto lhsSequenceCount{Count(lhsSequence)};
+    if (rhsSequenceCount != lhsSequenceCount)
+        return FalseSymbol;
+    for (auto i{0}; i < rhsSequenceCount; ++i)
+    {
+        auto areEqual{EqualRLWSTypes(rhsSequence[i], lhsSequence[i])};
+        if (EqualSymbols(areEqual, FalseSymbol))
+            return FalseSymbol;
+    }
+    return TrueSymbol;
+}
 
 static constexpr auto CreateException = [](const auto& message) { return std::invalid_argument(message); };
 

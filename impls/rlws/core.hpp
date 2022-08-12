@@ -28,7 +28,7 @@ static constexpr auto GenericInteger = [](const auto& fnName)
     };
 };
 
-static const auto AddFn = [](const auto& argList)
+static constexpr auto AddFn = [](const auto& argList)
 {
     // the first element of argList is the function value
     static const auto Integer{GenericInteger(T::ADD_TOKEN)};
@@ -40,7 +40,7 @@ static const auto AddFn = [](const auto& argList)
     return T::CreateInteger(result);
 };
 
-static const auto CountFn = [](const auto& argList)
+static constexpr auto CountFn = [](const auto& argList)
 {
     // the first element of argList is the function value
     static const auto fnName{T::S{T::COUNT_TOKEN}};
@@ -56,7 +56,7 @@ static const auto CountFn = [](const auto& argList)
     return T::CreateInteger(parameterCount);
 };
 
-static const auto DivideFn = [](const auto& argList)
+static constexpr auto DivideFn = [](const auto& argList)
 {
     // the first element of argList is the function value
     static const auto Integer{GenericInteger(T::DIVIDE_TOKEN)};
@@ -77,7 +77,7 @@ static const auto DivideFn = [](const auto& argList)
     return T::CreateInteger(result);
 };
 
-static const auto EmptyQFn = [](const auto& argList)
+static constexpr auto EmptyQFn = [](const auto& argList)
 {
     // the first element of argList is the function value
     static const auto fnName{T::S{T::EMPTY_Q_TOKEN}};
@@ -93,7 +93,20 @@ static const auto EmptyQFn = [](const auto& argList)
     return (0 == parameterCount) ? T::TrueSymbol : T::FalseSymbol;
 };
 
-static const auto ListFn = [](const auto& argList)
+static constexpr auto EqualFn = [](const auto& argList)
+{
+    // the first element of argList is the function value
+    static const auto fnName{T::S{T::EQUAL_TOKEN}};
+    auto args{T::ValueList(argList)};
+    auto argCount{T::Count(args)};
+    if (3 != argCount)
+        throw T::CreateException(fnName + ": Wrong number of args (" + std::to_string(argCount - 1) + ")");
+    auto parameter1{args[1]};
+    auto parameter2{args[2]};
+    return T::EqualRLWSTypes(parameter1, parameter2);
+};
+
+static constexpr auto ListFn = [](const auto& argList)
 {
     // the first element of argList is the function value
     auto args{T::ValueList(argList)};
@@ -104,7 +117,7 @@ static const auto ListFn = [](const auto& argList)
     return T::CreateList(result);
 };
 
-static const auto ListQFn = [](const auto& argList)
+static constexpr auto ListQFn = [](const auto& argList)
 {
     // the first element of argList is the function value
     static const auto fnName{T::S{T::LIST_Q_TOKEN}};
@@ -115,7 +128,7 @@ static const auto ListQFn = [](const auto& argList)
     return T::IsList(args[1]) ? T::TrueSymbol : T::FalseSymbol;
 };
 
-static const auto MultiplyFn = [](const auto& argList)
+static constexpr auto MultiplyFn = [](const auto& argList)
 {
     // the first element of argList is the function value
     static const auto Integer{GenericInteger(T::MULTIPLY_TOKEN)};
@@ -127,7 +140,7 @@ static const auto MultiplyFn = [](const auto& argList)
     return T::CreateInteger(result);
 };
 
-static const auto PrStrFn = [](const auto& argList)
+static constexpr auto PrStrFn = [](const auto& argList)
 {
     // the first element of argList is the function value
     auto args{T::ValueList(argList)};
@@ -143,7 +156,7 @@ static const auto PrStrFn = [](const auto& argList)
     return T::CreateString(result);
 };
 
-static const auto PrintlnFn = [](const auto& argList)
+static constexpr auto PrintlnFn = [](const auto& argList)
 {
     // the first element of argList is the function value
     auto args{T::ValueList(argList)};
@@ -160,7 +173,7 @@ static const auto PrintlnFn = [](const auto& argList)
     return E::NilSymbol;
 };
 
-static const auto PrnFn = [](const auto& argList)
+static constexpr auto PrnFn = [](const auto& argList)
 {
     // the first element of argList is the function value
     auto args{T::ValueList(argList)};
@@ -177,7 +190,7 @@ static const auto PrnFn = [](const auto& argList)
     return E::NilSymbol;
 };
 
-static const auto StrFn = [](const auto& argList)
+static constexpr auto StrFn = [](const auto& argList)
 {
     // the first element of argList is the function value
     auto args{T::ValueList(argList)};
@@ -191,7 +204,7 @@ static const auto StrFn = [](const auto& argList)
     return T::CreateString(result);
 };
 
-static const auto SubtractFn = [](const auto& argList)
+static constexpr auto SubtractFn = [](const auto& argList)
 {
     // the first element of argList is the function value
     static const auto fnName{T::S{T::SUBTRACT_TOKEN}};
@@ -229,6 +242,7 @@ static auto ns{Ns{SFP(T::ADD_TOKEN, AddFn),
                   SFP(T::COUNT_TOKEN, CountFn),
                   SFP(T::DIVIDE_TOKEN, DivideFn),
                   SFP(T::EMPTY_Q_TOKEN, EmptyQFn),
+                  SFP(T::EQUAL_TOKEN, EqualFn),
                   SFP(T::LIST_TOKEN, ListFn),
                   SFP(T::LIST_Q_TOKEN, ListQFn),
                   SFP(T::MULTIPLY_TOKEN, MultiplyFn),
