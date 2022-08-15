@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo "mal - bb"
+
+exec bb $(dirname $0)/${STEP:-stepA_mal}.bb "${@}"
