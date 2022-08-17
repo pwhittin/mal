@@ -1,11 +1,13 @@
 (ns mal.core
-  (:require [mal.reader :as r]
-            [mal.printer :as p]))
+  (:require [mal.env :as en]
+            [mal.eval :as ev]
+            [mal.printer :as p]
+            [mal.reader :as r]))
 
 (defn READ [s] (r/read-str s))
-(defn EVAL [s] s)
+(defn EVAL [mal env] (ev/eval mal env))
 (defn PRINT [mal] (p/print-str mal))
-(def rep (comp PRINT EVAL READ))
+(defn rep [s] (-> s READ (EVAL en/repl_env) PRINT))
 
 (defn -main [& args]
   (loop []

@@ -64,6 +64,9 @@
 (defn token-is-true? [token]
   (= "true" token))
 
+(defn token-is-keyword? [token]
+  (s/starts-with? token ":"))
+
 (defn token->integer [token]
   (Integer/parseInt token))
 
@@ -78,6 +81,7 @@
               (token-is-nil? token) [:mal-nil nil]
               (token-is-integer? token) [:mal-integer (token->integer token)]
               (token-is-string? token) [:mal-string (token->string token)]
+              (token-is-keyword? token) [:mal-keyword token]
               (token-is-symbol? token) [:mal-symbol token]
               :else (throw (Exception. (str "end of input '" token "'"))))]
     [(rest tokens) mal]))
@@ -124,3 +128,10 @@
   (let [tokens (tokenize s)
         [_ mals] (read-form tokens)]
     mals))
+
+(comment
+
+  (read-str ":one")
+
+;
+  )

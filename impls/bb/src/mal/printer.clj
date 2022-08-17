@@ -15,6 +15,9 @@
 (defn mal-string->string [mal-string]
   (str "\"" (s/replace mal-string #"\"" "\\\\\"") "\""))
 
+(defn mal-keyword->string [mal-symbol]
+  mal-symbol)
+
 (defn mal-symbol->string [mal-symbol]
   mal-symbol)
 
@@ -22,6 +25,7 @@
   (case mal-type
     :mal-false "false"
     :mal-integer (mal-integer->string mal-value)
+    :mal-keyword (mal-keyword->string mal-value)
     :mal-list (mal-list->string mal-value)
     :mal-map (mal-map->string mal-value)
     :mal-nil "nil"
