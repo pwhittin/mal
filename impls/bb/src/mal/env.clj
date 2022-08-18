@@ -28,17 +28,35 @@
       (throw (Exception. "-: wrong number of arguments (0)")))
     [:mal-integer (int (apply - (map second ints)))]))
 
-(def repl_env
-  {"+" [:mal-fn mal-add]
-   "/" [:mal-fn mal-divide]
-   "*" [:mal-fn mal-multiply]
-   "-" [:mal-fn mal-subtract]})
+(defn create [outer]
+  (atom {:data {}
+         :outer outer}))
+
+(defn set [env symbol mal]
+  (swap! env assoc-in [:data symbol] mal))
+
+(defn find [env symbol]
+  (if (get-in @env [:data symbol])
+    env
+    (when (:outer @env)
+      (recur (:outer @env) symbol))))
+
+(defn get [env symbol]
+  (let [found-env (find env symbol)]
+    (when (not found-env)
+      (throw (Exception. (str "symbol '" (second symbol) "' not found"))))
+    (get-in @found-env [:data symbol])))
+
+(def repl_env (create nil))
+(set repl_env [:mal-symbol "+"] [:mal-fn mal-add])
+(set repl_env [:mal-symbol "/"] [:mal-fn mal-divide])
+(set repl_env [:mal-symbol "*"] [:mal-fn mal-multiply])
+(set repl_env [:mal-symbol "-"] [:mal-fn mal-subtract])
 
 (comment
 
-  (mal-add [[:mal-integer 1] [:mal-integer 2]])
-  (mal-add [])
-  (mal-add [[:mal-integer 1]])
+  (get repl_env [:mal-symbol "+"])
+  (get repl_env [:mal-symbol "fred"])
 
-  ;
+;
   )

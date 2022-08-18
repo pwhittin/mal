@@ -1,11 +1,7 @@
-(ns mal.eval)
+(ns mal.eval
+  (:require [mal.env :as en]))
 
 (declare eval)
-
-(defn lookup [mal-value env]
-  (let [answer (env mal-value)]
-    (when (not answer) (throw (Exception. (str "unbound symbol '" mal-value "'"))))
-    answer))
 
 (defn eval-sequence [mal-type mal-value env]
   [mal-type (map #(eval % env) mal-value)])
@@ -13,7 +9,7 @@
 (defn eval-ast [mal env]
   (let [[mal-type mal-value] mal]
     (case mal-type
-      :mal-symbol (lookup mal-value env)
+      :mal-symbol (en/get env mal)
       :mal-list (eval-sequence :mal-list mal-value env)
       :mal-map (eval-sequence :mal-map mal-value env)
       :mal-vector (eval-sequence :mal-vector mal-value env)
