@@ -24,6 +24,7 @@
 (defn print-str [[mal-type mal-value]]
   (case mal-type
     :mal-false "false"
+    :mal-fn "#<function>"
     :mal-integer (mal-integer->string mal-value)
     :mal-keyword (mal-keyword->string mal-value)
     :mal-list (mal-list->string mal-value)

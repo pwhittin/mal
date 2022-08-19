@@ -28,10 +28,6 @@
       (throw (Exception. "-: wrong number of arguments (0)")))
     [:mal-integer (int (apply - (map second ints)))]))
 
-(defn create [outer]
-  (atom {:data {}
-         :outer outer}))
-
 (defn set [env symbol mal]
   (swap! env assoc-in [:data symbol] mal))
 
@@ -47,16 +43,12 @@
       (throw (Exception. (str "symbol '" (second symbol) "' not found"))))
     (get-in @found-env [:data symbol])))
 
+(defn create [outer]
+  (atom {:data {}
+         :outer outer}))
+
 (def repl_env (create nil))
 (set repl_env [:mal-symbol "+"] [:mal-fn mal-add])
 (set repl_env [:mal-symbol "/"] [:mal-fn mal-divide])
 (set repl_env [:mal-symbol "*"] [:mal-fn mal-multiply])
 (set repl_env [:mal-symbol "-"] [:mal-fn mal-subtract])
-
-(comment
-
-  (get repl_env [:mal-symbol "+"])
-  (get repl_env [:mal-symbol "fred"])
-
-;
-  )

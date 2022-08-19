@@ -32,6 +32,13 @@
     (en/set env symbol v)
     v))
 
+(defn eval-mal-do [forms env]
+  (loop [fs forms
+         answer nil]
+    (if (empty? fs)
+      answer
+      (recur (rest fs) (eval (first fs) env)))))
+
 (defn eval-mal-let*-validate! [[[sequence-type sequence-value :as sequence] value & others :as args] env]
   (when (zero? (count args))
     (throw (Exception. "let*: wrong number of args (0)")))
@@ -64,11 +71,13 @@
     (fn-value args)))
 
 (def mal-def! [:mal-symbol "def!"])
+(def mal-do [:mal-symbol "do"])
 (def mal-let* [:mal-symbol "let*"])
 
 (defn eval-list [[_ [first-mal-value & rest-mal-value :as mal-value] :as mal] env]
   (condp = first-mal-value
     mal-def! (eval-mal-def! rest-mal-value env)
+    mal-do (eval-mal-do rest-mal-value env)
     mal-let* (eval-mal-let* rest-mal-value env)
     (eval-fn mal env)))
 
@@ -81,15 +90,14 @@
 
 (comment
 
-  (def e (en/create nil))
-  (def bindings [[:mal-symbol "a"] [:mal-integer 1] [:mal-symbol "b"] [:mal-integer 2]])
+  (defn go [n]
+    (loop [ns (range n)
+           answer nil]
+      (if (empty? ns)
+        answer
+        (recur (rest ns) (* 2 (first ns))))))
 
-  (doseq [[symbol value] (partition 2 bindings)]
-    (en/set e symbol value))
-
-  (prn @e)
-
-  (partition 2 ['a 1 'b 2])
+  (go 10)
 
 ;
   )

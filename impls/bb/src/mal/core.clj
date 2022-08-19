@@ -9,14 +9,15 @@
 (defn PRINT [mal] (p/print-str mal))
 (defn rep [s] (-> s READ (EVAL en/repl_env) PRINT))
 
+(def prompt "user> ")
 (defn -main [& args]
   (loop []
-    (print "user> ")
+    (print prompt)
     (flush)
     (let [input (read-line)]
       (when input
-        (flush)
         (try
           (println (rep input))
+          (flush)
           (catch Exception e (println "error:" (.getMessage e))))
         (recur)))))

@@ -128,10 +128,3 @@
   (let [tokens (tokenize s)
         [_ mals] (read-form tokens)]
     mals))
-
-(comment
-
-  (read-str ":one")
-
-;
-  )
