@@ -3,9 +3,6 @@
 
 (declare print-str)
 
-(defn mal-integer->string [mal-integer]
-  (str mal-integer))
-
 (defn mal-sequence->string [start-token end-token mal-sequence]
   (str start-token (->> mal-sequence (map print-str) (interpose " ") (apply str)) end-token))
 (def mal-list->string (partial mal-sequence->string "(" ")"))
@@ -25,7 +22,7 @@
   (case mal-type
     :mal-false "false"
     :mal-fn "#<function>"
-    :mal-integer (mal-integer->string mal-value)
+    :mal-integer mal-value
     :mal-keyword (mal-keyword->string mal-value)
     :mal-list (mal-list->string mal-value)
     :mal-map (mal-map->string mal-value)
