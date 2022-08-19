@@ -39,6 +39,23 @@
       answer
       (recur (rest fs) (eval (first fs) env)))))
 
+(defn eval-mal-if-validate! [[predicate form-true form-false & others :as forms]]
+  (when (not predicate)
+    (throw (Exception. (str "if: wrong number of args (0)"))))
+  (when (not form-true)
+    (throw (Exception. (str "if: wrong number of args (1) " (pr-str (mapv p/print-str forms))))))
+  (when others
+    (throw (Exception. (str "if: wrong number of args (" (+ 3 (count others)) ") " (pr-str (mapv p/print-str forms)))))))
+
+(defn eval-mal-if [[predicate form-true form-false :as forms] env]
+  (eval-mal-if-validate! forms)
+  (let [[predicate-type _] (eval predicate env)]
+    (if (not (#{:mal-false :mal-nil} predicate-type))
+      (eval form-true env)
+      (if form-false
+        (eval form-false env)
+        [:mal-nil nil]))))
+
 (defn eval-mal-let*-validate! [[[sequence-type sequence-value :as sequence] value & others :as args] env]
   (when (zero? (count args))
     (throw (Exception. "let*: wrong number of args (0)")))
@@ -72,12 +89,14 @@
 
 (def mal-def! [:mal-symbol "def!"])
 (def mal-do [:mal-symbol "do"])
+(def mal-if [:mal-symbol "if"])
 (def mal-let* [:mal-symbol "let*"])
 
 (defn eval-list [[_ [first-mal-value & rest-mal-value :as mal-value] :as mal] env]
   (condp = first-mal-value
     mal-def! (eval-mal-def! rest-mal-value env)
     mal-do (eval-mal-do rest-mal-value env)
+    mal-if (eval-mal-if rest-mal-value env)
     mal-let* (eval-mal-let* rest-mal-value env)
     (eval-fn mal env)))
 
