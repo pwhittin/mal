@@ -1,23 +1,35 @@
 (ns mal.core
-  (:require [mal.env :as en]
-            [mal.eval :as ev]
-            [mal.printer :as p]
-            [mal.reader :as r]))
+  (:require [mal.printer :as p]))
 
-(defn READ [s] (r/read-str s))
-(defn EVAL [mal env] (ev/eval mal env))
-(defn PRINT [mal] (p/print-str mal))
-(defn rep [s] (-> s READ (EVAL en/repl_env) PRINT))
+(defn all-integers?! [fn-symbol mals]
+  (let [non-integer-mals (filter #(not= :mal-integer (first %)) mals)]
+    (when (seq non-integer-mals)
+      (throw (Exception.
+              (str fn-symbol ": not all arguments are integers '" (p/print-str [:mal-list non-integer-mals]) "'")))))
+  mals)
 
-(def prompt "user> ")
-(defn -main [& args]
-  (loop []
-    (print prompt)
-    (flush)
-    (let [input (read-line)]
-      (when input
-        (try
-          (println (rep input))
-          (flush)
-          (catch Exception e (println "error:" (.getMessage e))))
-        (recur)))))
+(defn mal-add [mals]
+  (let [ints (all-integers?! "+" mals)]
+    [:mal-integer (apply + (map second ints))]))
+
+(defn mal-divide [mals]
+  (let [ints (all-integers?! "/" mals)]
+    (when (= 0 (count ints))
+      (throw (Exception. "/: wrong number of arguments (0)")))
+    [:mal-integer (int (apply / (map second ints)))]))
+
+(defn mal-multiply [mals]
+  (let [ints (all-integers?! "*" mals)]
+    [:mal-integer (apply * (map second ints))]))
+
+(defn mal-subtract [mals]
+  (let [ints (all-integers?! "-" mals)]
+    (when (= 0 (count ints))
+      (throw (Exception. "-: wrong number of arguments (0)")))
+    [:mal-integer (int (apply - (map second ints)))]))
+
+(def ns
+  {[:mal-symbol "+"] [:mal-fn mal-add]
+   [:mal-symbol "/"] [:mal-fn mal-divide]
+   [:mal-symbol "*"] [:mal-fn mal-multiply]
+   [:mal-symbol "-"] [:mal-fn mal-subtract]})
