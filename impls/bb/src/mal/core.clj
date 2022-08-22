@@ -21,6 +21,12 @@
 (defn mal-list [mals]
   [:mal-list mals])
 
+(defn mal-list? [[[first-mal-type _] & rest-mals :as mals]]
+  (when (seq rest-mals)
+    (throw (Exception.
+            (str "list?: more than one argument '" (p/print-str [:mal-list mals]) "'"))))
+  (if (= :mal-list first-mal-type) [:mal-true true] [:mal-false false]))
+
 (defn mal-multiply [mals]
   (let [ints (all-integers?! "*" mals)]
     [:mal-integer (apply * (map second ints))]))
@@ -36,4 +42,5 @@
    [:mal-symbol "/"] [:mal-fn mal-divide]
    [:mal-symbol "*"] [:mal-fn mal-multiply]
    [:mal-symbol "-"] [:mal-fn mal-subtract]
-   [:mal-symbol "list"] [:mal-fn mal-list]})
+   [:mal-symbol "list"] [:mal-fn mal-list]
+   [:mal-symbol "list?"] [:mal-fn mal-list?]})
