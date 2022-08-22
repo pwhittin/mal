@@ -105,6 +105,10 @@
 (defn mal-pr-str [mals]
   [:mal-string (->> mals (map p/print-str) (interpose " ") (apply str))])
 
+(defn mal-prn [mals]
+  (println (->> mals (map p/print-str) (interpose " ") (apply str)))
+  [:mal-nil nil])
+
 (defn mal-str [mals]
   [:mal-string (->> mals (map #(p/print-str % false)) (apply str))])
 
@@ -129,4 +133,5 @@
    [:mal-symbol "list"] [:mal-fn mal-list]
    [:mal-symbol "list?"] [:mal-fn mal-list?]
    [:mal-symbol "pr-str"] [:mal-fn mal-pr-str]
+   [:mal-symbol "prn"] [:mal-fn mal-prn]
    [:mal-symbol "str"] [:mal-fn mal-str]})
