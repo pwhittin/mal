@@ -18,6 +18,9 @@
       (throw (Exception. "/: wrong number of arguments (0)")))
     [:mal-integer (int (apply / (map second ints)))]))
 
+(defn mal-list [mals]
+  [:mal-list mals])
+
 (defn mal-multiply [mals]
   (let [ints (all-integers?! "*" mals)]
     [:mal-integer (apply * (map second ints))]))
@@ -32,4 +35,5 @@
   {[:mal-symbol "+"] [:mal-fn mal-add]
    [:mal-symbol "/"] [:mal-fn mal-divide]
    [:mal-symbol "*"] [:mal-fn mal-multiply]
-   [:mal-symbol "-"] [:mal-fn mal-subtract]})
+   [:mal-symbol "-"] [:mal-fn mal-subtract]
+   [:mal-symbol "list"] [:mal-fn mal-list]})

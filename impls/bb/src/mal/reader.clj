@@ -71,7 +71,10 @@
   (Integer/parseInt token))
 
 (defn token->string [token]
-  (s/replace (apply str (->> token (drop 1) (drop-last))) #"\\\"" "\""))
+  (-> (->> token (drop 1) (drop-last) (apply str))
+      (s/replace #"\\\"" "\"")
+      (s/replace #"\\n" "\n")
+      (s/replace #"\\\\" "\\\\")))
 
 (defn read-atom [tokens]
   (let [token (first tokens)
