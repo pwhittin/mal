@@ -12,6 +12,17 @@
   (let [ints (all-integers?! "+" mals)]
     [:mal-integer (apply + (map second ints))]))
 
+(defn mal-count [[[first-mal-type first-mal-value :as first-mal] & rest-mals :as mals]]
+  (when (seq rest-mals)
+    (throw (Exception.
+            (str "count: wrong number of arguments (" (count mals) ") '" (p/print-str [:mal-list mals]) "'"))))
+  (when (not (#{:mal-list :mal-map :mal-nil :mal-vector} first-mal-type))
+    (throw (Exception.
+            (str "empty?: argument must be a list, map, nil or vector '" (p/print-str first-mal) "'"))))
+  [:mal-integer (if (= :mal-nil first-mal-type)
+                  0
+                  (/ (count first-mal-value) (if (= :mal-map first-mal-type) 2 1)))])
+
 (defn mal-divide [mals]
   (let [ints (all-integers?! "/" mals)]
     (when (= 0 (count ints))
@@ -51,6 +62,7 @@
    [:mal-symbol "/"] [:mal-fn mal-divide]
    [:mal-symbol "*"] [:mal-fn mal-multiply]
    [:mal-symbol "-"] [:mal-fn mal-subtract]
+   [:mal-symbol "count"] [:mal-fn mal-count]
    [:mal-symbol "empty?"] [:mal-fn mal-empty?]
    [:mal-symbol "list"] [:mal-fn mal-list]
    [:mal-symbol "list?"] [:mal-fn mal-list?]})

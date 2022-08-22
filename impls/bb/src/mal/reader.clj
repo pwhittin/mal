@@ -23,13 +23,17 @@
 
 (defn read-sequence [tokens]
   (let [start-token (first tokens)
-        end-token (start-token->end-token start-token)]
+        end-token (start-token->end-token start-token)
+        sequence-type (start-token->sequence-mal-type start-token)]
     (loop [remaining-tokens (rest tokens)
            list-mals []]
       (when (empty? remaining-tokens)
-        (throw (Exception. "unbalanced '('")))
+        (throw (Exception. (str "unbalanced sequence " (pr-str tokens)))))
       (if (= end-token (first remaining-tokens))
-        [(rest remaining-tokens) [(start-token->sequence-mal-type start-token) list-mals]]
+        (do
+          (when (and (= :mal-map sequence-type) (odd? (count list-mals)))
+            (throw (Exception. (str "odd number of map forms '" (p/print-str [:mal-map list-mals]) "'"))))
+          [(rest remaining-tokens) [sequence-type list-mals]])
         (let [[rts mal] (read-form remaining-tokens)]
           (recur rts (conj list-mals mal)))))))
 
