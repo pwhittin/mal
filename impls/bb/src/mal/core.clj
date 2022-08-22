@@ -39,11 +39,12 @@
   (when (seq rest-mals)
     (throw (Exception.
             (str "count: wrong number of arguments (" (count mals) ") '" (p/print-str [:mal-list mals]) "'"))))
-  (when (not (is-sequence? mal-1))
-    (throw (Exception. (str "count: argument must be a list, map, nil or vector '" (p/print-str mal-1) "'"))))
-  [:mal-integer (if (= :mal-nil mal-type-1)
-                  0
-                  (/ (count mal-value-1) (if (= :mal-map mal-type-1) 2 1)))])
+  (if (= [:mal-nil nil] mal-1)
+    [:mal-integer 0]
+    (do
+      (when (not (is-sequence? mal-1))
+        (throw (Exception. (str "count: argument must be a list, map, or vector '" (p/print-str mal-1) "'"))))
+      [:mal-integer (/ (count mal-value-1) (if (= :mal-map mal-type-1) 2 1))])))
 
 (defn mal-divide [mals]
   (let [ints (all-integers?! "/" mals)]

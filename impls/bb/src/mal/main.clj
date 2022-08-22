@@ -12,6 +12,8 @@
 (defn PRINT [mal] (p/print-str mal))
 (defn rep [s] (-> s READ (EVAL en/repl_env) PRINT))
 
+(rep "(def! not (fn* (a) (if a false true)))")
+
 (def prompt "user> ")
 (defn -main [& args]
   (loop []
