@@ -105,6 +105,9 @@
 (defn mal-pr-str [mals]
   [:mal-string (->> mals (map p/print-str) (interpose " ") (apply str))])
 
+(defn mal-str [mals]
+  [:mal-string (->> mals (map #(p/print-str % false)) (apply str))])
+
 (defn mal-subtract [mals]
   (let [ints (all-integers?! "-" mals)]
     (when (= 0 (count ints))
@@ -125,4 +128,5 @@
    [:mal-symbol "empty?"] [:mal-fn mal-empty?]
    [:mal-symbol "list"] [:mal-fn mal-list]
    [:mal-symbol "list?"] [:mal-fn mal-list?]
-   [:mal-symbol "pr-str"] [:mal-fn mal-pr-str]})
+   [:mal-symbol "pr-str"] [:mal-fn mal-pr-str]
+   [:mal-symbol "str"] [:mal-fn mal-str]})
