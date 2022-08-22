@@ -18,13 +18,22 @@
       (throw (Exception. "/: wrong number of arguments (0)")))
     [:mal-integer (int (apply / (map second ints)))]))
 
+(defn mal-empty? [[[first-mal-type first-mal-value :as first-mal] & rest-mals :as mals]]
+  (when (seq rest-mals)
+    (throw (Exception.
+            (str "empty?: wrong number of arguments (" (count mals) ") '" (p/print-str [:mal-list mals]) "'"))))
+  (when (not (#{:mal-list :mal-map :mal-vector} first-mal-type))
+    (throw (Exception.
+            (str "empty?: argument must be a list, map or vector '" (p/print-str first-mal) "'"))))
+  (if (zero? (count first-mal-value)) [:mal-true true] [:mal-false false]))
+
 (defn mal-list [mals]
   [:mal-list mals])
 
 (defn mal-list? [[[first-mal-type _] & rest-mals :as mals]]
   (when (seq rest-mals)
     (throw (Exception.
-            (str "list?: more than one argument '" (p/print-str [:mal-list mals]) "'"))))
+            (str "list?: wrong number of arguments (" (count mals) ") '" (p/print-str [:mal-list mals]) "'"))))
   (if (= :mal-list first-mal-type) [:mal-true true] [:mal-false false]))
 
 (defn mal-multiply [mals]
@@ -42,5 +51,6 @@
    [:mal-symbol "/"] [:mal-fn mal-divide]
    [:mal-symbol "*"] [:mal-fn mal-multiply]
    [:mal-symbol "-"] [:mal-fn mal-subtract]
+   [:mal-symbol "empty?"] [:mal-fn mal-empty?]
    [:mal-symbol "list"] [:mal-fn mal-list]
    [:mal-symbol "list?"] [:mal-fn mal-list?]})
