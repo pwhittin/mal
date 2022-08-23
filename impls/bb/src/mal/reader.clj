@@ -74,11 +74,23 @@
 (defn token->integer [token]
   (Integer/parseInt token))
 
+(defn replace-escapes [char-sequence]
+  (loop [in-char-sequence char-sequence
+         out-char-sequence []]
+    (if (empty? in-char-sequence)
+      (apply str out-char-sequence)
+      (let [[c-1st c-2nd & _] in-char-sequence
+            [c drop-n] (cond
+                         (= [\\ \n] [c-1st c-2nd]) [\newline 2]
+                         (= [\\ \"] [c-1st c-2nd]) [\" 2]
+                         (= [\\ \\] [c-1st c-2nd]) [\\ 2]
+                         :else [c-1st 1])]
+        (recur (drop drop-n in-char-sequence) (conj out-char-sequence c))))))
+
 (defn token->string [token]
-  (-> (->> token (drop 1) (drop-last) (apply str))
-      (s/replace #"\\\"" "\"")
-      (s/replace #"\\n" "\n")
-      (s/replace #"\\\\" "\\\\")))
+  (->> token (drop 1) (drop-last) (replace-escapes))
+  ;; (-> (->> token (drop 1) (drop-last) (apply str)) (replace-escapes))
+  )
 
 (defn read-atom [tokens]
   (let [token (first tokens)
@@ -135,3 +147,12 @@
   (let [tokens (tokenize s)
         [_ mals] (read-form tokens)]
     mals))
+
+(comment
+
+  (def x (seq "a"))
+  (let [[a b & c] x]
+    (println "a:" a "b:" b "c:" c))
+
+;
+  )
