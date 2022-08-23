@@ -43,27 +43,42 @@
       answer
       (recur (rest fs) (eval (first fs) env)))))
 
+(defn params-amper-parse [params]
+  (let [amper-params (drop-while #(not= [:mal-symbol "&"] %) params)]
+    [(drop-last (count amper-params) params) (drop 1 amper-params)]))
+
 (defn eval-mal-fn*-validate! [[params-type params-value :as params]]
   (when (not params)
     (throw (Exception. (str "fn*: wrong number of args (0)"))))
   (when (not (#{:mal-list :mal-vector} params-type))
     (throw (Exception. (str "fn*: params must be a list or vector"))))
   (when (some (fn [[type _]] (not= :mal-symbol type)) params-value)
-    (throw (Exception. (str "fn*: non-symbol param: " (pr-str (mapv p/print-str params-value)))))))
+    (throw (Exception. (str "fn*: non-symbol param: " (pr-str (mapv p/print-str params-value))))))
+  (let [[_ amper-params :as amper-parse] (params-amper-parse params-value)]
+    (when (> (count amper-params) 1)
+      (throw (Exception. (str "fn*: only one param allowed after '&': " (pr-str (mapv p/print-str params-value))))))
+    amper-parse))
 
-(defn eval-mal-fn-validate! [args [_ params-value :as params]]
-  (when (not= (count args) (count params-value))
-    (throw (Exception. (str "fn: wrong number of args (not= " (count args) " " (count params-value) "): "
-                            (p/print-str [:mal-list args]))))))
+(defn eval-mal-fn-validate! [args [regular-params amper-params]]
+  (when (< (count args) (count regular-params))
+    (throw (Exception. (str "fn: wrong number of args (< " (count args) " " (count regular-params) "): "
+                            (p/print-str [:mal-list args])))))
+  (let [regular-args (take (count regular-params) args)
+        regular-bindings (interleave regular-params regular-args)]
+    (if (empty? amper-params)
+      regular-bindings
+      (let [amper-args (drop (count regular-args) args)
+            amper-args-list [:mal-list (concat [[:mal-symbol "list"]] amper-args)]
+            amper-symbol (first amper-params)]
+        (concat regular-bindings [amper-symbol amper-args-list])))))
 
 (defn eval-mal-fn* [[[_ params-value :as params] form] env]
-  (eval-mal-fn*-validate! params)
-  [:mal-fn (fn [args]
-             (eval-mal-fn-validate! args params)
-             (let [e (en/create env)
-                   bindings (interleave params-value args)]
-               (add-bindings! e bindings)
-               (eval form e)))])
+  (let [amper-parse (eval-mal-fn*-validate! params)]
+    [:mal-fn (fn [args]
+               (let [bindings (eval-mal-fn-validate! args amper-parse)
+                     e (en/create env)]
+                 (add-bindings! e bindings)
+                 (eval form e)))]))
 
 (defn eval-mal-if-validate! [[predicate form-true form-false & others :as forms]]
   (when (not predicate)
@@ -130,3 +145,10 @@
     (if (empty? mal-value)
       mal
       (eval-list mal env))))
+
+(comment
+
+  (drop-last 2 [1 2 3 4])
+
+;
+  )
