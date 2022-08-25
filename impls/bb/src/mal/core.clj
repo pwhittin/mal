@@ -1,5 +1,8 @@
 (ns mal.core
-  (:require [mal.printer :as p]))
+  (:require [mal.env :as en]
+            [mal.eval :as ev]
+            [mal.printer :as p]
+            [mal.reader :as r]))
 
 (defn all-integers?! [fn-symbol mals]
   (let [non-integer-mals (filter #(not= :mal-integer (first %)) mals)]
@@ -62,6 +65,14 @@
     (throw (Exception. (str "empty?: argument must be a list, map or vector '" (p/print-str mal-1) "'"))))
   (if (zero? (count mal-value-1)) [:mal-true true] [:mal-false false]))
 
+(defn mal-eval [[mal-1 & rest-mals :as mals]]
+  (when (nil? mal-1)
+    (throw (Exception. "eval: wrong number of arguments (0)")))
+  (when (seq rest-mals)
+    (throw (Exception.
+            (str "eval: wrong number of arguments (" (count mals) ") '" (p/print-str [:mal-list mals]) "'"))))
+  (ev/eval mal-1 en/repl_env))
+
 (defn mal-equal [[[mal-type-1 mal-value-1 :as mal-1] [mal-type-2 mal-value-2 :as mal-2] & rest-mals :as mals]]
   (when (nil? mal-type-1)
     (throw (Exception. "=: wrong number of arguments (0)")))
@@ -114,6 +125,26 @@
   (println (->> mals (map p/print-str) (interpose " ") (apply str)))
   [:mal-nil nil])
 
+(defn mal-read-string [[[mal-type-1 mal-value-1 :as mal-1] & rest-mals :as mals]]
+  (when (nil? mal-type-1)
+    (throw (Exception. "read-string: wrong number of arguments (0)")))
+  (when (seq rest-mals)
+    (throw (Exception.
+            (str "read-string: wrong number of arguments (" (count mals) ") '" (p/print-str [:mal-list mals]) "'"))))
+  (when (not= :mal-string mal-type-1)
+    (throw (Exception. (str "read-string: argument must be a string '" (p/print-str [:mal-list mals]) "'"))))
+  (r/read-str mal-value-1))
+
+(defn mal-slurp [[[mal-type-1 mal-value-1 :as mal-1] & rest-mals :as mals]]
+  (when (nil? mal-type-1)
+    (throw (Exception. "slurp: wrong number of arguments (0)")))
+  (when (seq rest-mals)
+    (throw (Exception.
+            (str "slurp: wrong number of arguments (" (count mals) ") '" (p/print-str [:mal-list mals]) "'"))))
+  (when (not= :mal-string mal-type-1)
+    (throw (Exception. (str "slurp: argument must be a string '" (p/print-str [:mal-list mals]) "'"))))
+  [:mal-string (slurp mal-value-1)])
+
 (defn mal-str [mals]
   [:mal-string (->> mals (map #(p/print-str % false)) (apply str))])
 
@@ -135,9 +166,12 @@
    [:mal-symbol ">="] [:mal-fn mal-greater-than-or-equal]
    [:mal-symbol "count"] [:mal-fn mal-count]
    [:mal-symbol "empty?"] [:mal-fn mal-empty?]
+   [:mal-symbol "eval"] [:mal-fn mal-eval]
    [:mal-symbol "list"] [:mal-fn mal-list]
    [:mal-symbol "list?"] [:mal-fn mal-list?]
    [:mal-symbol "pr-str"] [:mal-fn mal-pr-str]
    [:mal-symbol "println"] [:mal-fn mal-println]
    [:mal-symbol "prn"] [:mal-fn mal-prn]
+   [:mal-symbol "read-string"] [:mal-fn mal-read-string]
+   [:mal-symbol "slurp"] [:mal-fn mal-slurp]
    [:mal-symbol "str"] [:mal-fn mal-str]})

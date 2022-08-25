@@ -13,6 +13,7 @@
 (defn rep [s] (-> s READ (EVAL en/repl_env) PRINT))
 
 (rep "(def! not (fn* (a) (if a false true)))")
+(rep "(def! load-file (fn* (f) (eval (read-string (str \"(do \" (slurp f) \"\nnil)\")))))")
 
 (def prompt "user> ")
 (defn -main [& args]
