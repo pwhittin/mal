@@ -1,6 +1,14 @@
 (ns mal.eval
-  (:require [mal.env :as en]
+  (:require [clojure.pprint]
+            [mal.env :as en]
             [mal.printer :as p]))
+
+(defn env->symbols [env]
+  (loop [e env
+         symbols []]
+    (if (nil? e)
+      symbols
+      (recur (:outer @e) (conj symbols (map second (keys (:data @e))))))))
 
 (declare eval)
 
@@ -34,14 +42,15 @@
   (eval-mal-def!-validate! args)
   (let [v (eval value env)]
     (en/set env symbol v)
-    v))
+    [v nil]))
 
 (defn eval-mal-do [forms env]
-  (loop [fs forms
-         answer nil]
+  (loop [fs (drop-last forms)]
     (if (empty? fs)
-      answer
-      (recur (rest fs) (eval (first fs) env)))))
+      [(last forms) env]
+      (do
+        (eval (first fs) env)
+        (recur (rest fs))))))
 
 (defn params-amper-parse [params]
   (let [amper-params (drop-while #(not= [:mal-symbol "&"] %) params)]
@@ -72,13 +81,17 @@
             amper-symbol (first amper-params)]
         (concat regular-bindings [amper-symbol amper-args-list])))))
 
-(defn eval-mal-fn* [[[_ params-value :as params] form] env]
-  (let [amper-parse (eval-mal-fn*-validate! params)]
-    [:mal-fn (fn [args]
-               (let [bindings (eval-mal-fn-validate! args amper-parse)
-                     e (en/create env)]
-                 (add-bindings! e bindings)
-                 (eval form e)))]))
+(defn fn*-params->fn-args-env->env [params env]
+  (fn [args]
+    (let [bindings (eval-mal-fn-validate! args params)
+          e (en/create env)]
+      (add-bindings! e bindings)
+      e)))
+
+(defn eval-mal-fn* [[params form] env]
+  (let [fn-params (eval-mal-fn*-validate! params)
+        fn-args-env->env (fn*-params->fn-args-env->env fn-params env)]
+    [[:mal-fn* [form fn-args-env->env]] env]))
 
 (defn eval-mal-if-validate! [[predicate form-true form-false & others :as forms]]
   (when (not predicate)
@@ -92,10 +105,10 @@
   (eval-mal-if-validate! forms)
   (let [[predicate-type _] (eval predicate env)]
     (if (not (#{:mal-false :mal-nil} predicate-type))
-      (eval form-true env)
+      [form-true env]
       (if form-false
-        (eval form-false env)
-        [:mal-nil nil]))))
+        [form-false env]
+        [[:mal-nil nil] nil]))))
 
 (defn eval-mal-let*-validate! [[[sequence-type sequence-value :as sequence] value & others :as args]]
   (when (zero? (count args))
@@ -116,13 +129,17 @@
   (eval-mal-let*-validate! args)
   (let [let-env (en/create env)]
     (add-bindings! let-env sequence-value)
-    (eval value let-env)))
+    [value let-env]))
 
 (defn eval-fn [mal env]
   (let [[_ [[fn-type fn-value] & args]] (eval-ast mal env)]
-    (when (not= :mal-fn fn-type)
+    (when (not (#{:mal-fn :mal-fn*} fn-type))
       (throw (Exception. (str "attempted call of non-function '" (pr-str fn-value) "'"))))
-    (fn-value args)))
+    (if (= :mal-fn fn-type)
+      [(fn-value args) nil]
+      (let [[form args-env->env] fn-value
+            new-env (args-env->env args)]
+        [form new-env]))))
 
 (def mal-def! [:mal-symbol "def!"])
 (def mal-do [:mal-symbol "do"])
@@ -139,16 +156,14 @@
     mal-let* (eval-mal-let* mal-list-args env)
     (eval-fn mal-list env)))
 
-(defn eval [[mal-type mal-value :as mal] env]
-  (if (not= :mal-list mal-type)
-    (eval-ast mal env)
-    (if (empty? mal-value)
-      mal
-      (eval-list mal env))))
-
-(comment
-
-  (drop-last 2 [1 2 3 4])
-
-;
-  )
+(defn eval [mal env]
+  (loop [[mal-type mal-value :as m] mal
+         e env]
+    (if (not= :mal-list mal-type)
+      (eval-ast m e)
+      (if (empty? mal-value)
+        m
+        (let [[new-mal new-env] (eval-list m e)]
+          (if (not new-env)
+            new-mal
+            (recur new-mal new-env)))))))

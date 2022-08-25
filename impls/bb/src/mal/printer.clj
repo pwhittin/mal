@@ -31,6 +31,7 @@
    (case mal-type
      :mal-false "false"
      :mal-fn "#<function>"
+     :mal-fn* "#<function*>"
      :mal-integer mal-value
      :mal-keyword (mal-keyword->string mal-value)
      :mal-list (mal-list->string mal-value print-readably)
