@@ -131,6 +131,38 @@
     (add-bindings! let-env sequence-value)
     [value let-env]))
 
+(declare eval-mal-quasiquote)
+
+(defn eval-mal-quasiquote-reduce-fn [[mal-list env] [elt-type [elt-1 elt-2 & _] :as elt]]
+  (let [is-splice-unquote? (and (= :mal-list elt-type) (= [:mal-symbol "splice-unquote"] elt-1))]
+    (if is-splice-unquote?
+      [[:mal-list [[:mal-symbol "concat"] elt-2 mal-list]] env]
+      (let [[eval-elt-value _] (eval-mal-quasiquote [elt] env)]
+        [[:mal-list [[:mal-symbol "cons"] eval-elt-value mal-list]] env]))))
+
+(defn splice-unquote-list [mals env]
+  (reduce eval-mal-quasiquote-reduce-fn [[:mal-list []] env] (reverse mals)))
+
+(defn quasiquote-list [[mal-1 mal-2 & _ :as mals] env]
+  (if (= [:mal-symbol "unquote"] mal-1)
+    [mal-2 env]
+    (splice-unquote-list mals env)))
+
+(defn eval-mal-quasiquote [[[mal-type mal-value :as mal] & others :as args] env]
+  (when (zero? (count args))
+    (throw (Exception. "quasiquote: wrong number of args (0)")))
+  (when (seq others)
+    (throw (Exception. (str "quasiquote: wrong number of args (" (count args) "): " (pr-str (mapv p/print-str args))))))
+  (cond
+    (= :mal-list mal-type) (quasiquote-list mal-value env)
+    (#{:mal-map :mal-symbol} mal-type) [[:mal-list [[:mal-symbol "quote"] mal]] nil]
+    :else [mal nil]))
+
+(defn eval-mal-quote [[mal & others :as args]]
+  (when (seq others)
+    (throw (Exception. (str "quote: wrong number of args (" (count args) "): " (pr-str (mapv p/print-str args))))))
+  [mal nil])
+
 (defn eval-fn [mal env]
   (let [[_ [[fn-type fn-value] & args]] (eval-ast mal env)]
     (when (not (#{:mal-fn :mal-fn*} fn-type))
@@ -146,6 +178,8 @@
 (def mal-fn* [:mal-symbol "fn*"])
 (def mal-if [:mal-symbol "if"])
 (def mal-let* [:mal-symbol "let*"])
+(def mal-quasiquote [:mal-symbol "quasiquote"])
+(def mal-quote [:mal-symbol "quote"])
 
 (defn eval-list [[_ [mal-list-fn & mal-list-args] :as mal-list] env]
   (condp = mal-list-fn
@@ -154,6 +188,8 @@
     mal-fn* (eval-mal-fn* mal-list-args env)
     mal-if (eval-mal-if mal-list-args env)
     mal-let* (eval-mal-let* mal-list-args env)
+    mal-quasiquote (eval-mal-quasiquote mal-list-args env)
+    mal-quote (eval-mal-quote mal-list-args)
     (eval-fn mal-list env)))
 
 (defn eval [mal env]

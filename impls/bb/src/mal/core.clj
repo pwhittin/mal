@@ -16,11 +16,9 @@
 
 (defn validate-mals-count! [fn-str required-mals-count mals]
   (let [mals-count (count mals)]
-    (cond
-      (zero? mals-count) (throw (Exception. (str fn-str ": wrong number of arguments (0)")))
-      (not= mals-count required-mals-count) (throw (Exception.
-                                                    (str fn-str ": wrong number of arguments (" (count mals) ") '"
-                                                         (p/print-str [:mal-list mals]) "'"))))))
+    (when (not= required-mals-count mals-count)
+      (throw (Exception. (str fn-str ": wrong number of arguments (" mals-count ")"
+                              (when (not= 0 mals-count) (str " '" (p/print-str [:mal-list mals]) "'"))))))))
 
 (defn mal-integer-compare [fn-str fn [[mal-type-1 mal-value-1] [mal-type-2 mal-value-2] & _ :as mals]]
   (validate-mals-count! fn-str 2 mals)
@@ -48,6 +46,19 @@
 (defn mal-atom? [[[mal-type-1 _] & _ :as mals]]
   (validate-mals-count! "atom?" 1 mals)
   (mal-tf (= :mal-atom mal-type-1)))
+
+(defn mal-concat [mals]
+  (doseq [[mal-type] mals]
+    (when (not= :mal-list mal-type)
+      (throw (Exception. (str "cons: all arguments must be lists '" (p/print-str mals) "'")))))
+  [:mal-list (apply concat (map second mals))])
+
+(defn mal-cons [[mal-1 [mal-type-2 mal-value-2 :as mal-2] & _ :as mals]]
+  (validate-mals-count! "cons" 2 mals)
+  (when (not= :mal-list mal-type-2)
+    (throw (Exception. (str "cons: second argument must be a list '" (p/print-str mal-2) "'"))))
+  [:mal-list (cons mal-1 mal-value-2)]);;   (validate-mals-count! "quote" 1 mals)
+;;   mal-1)
 
 (defn mal-count [[[mal-type-1 mal-value-1 :as mal-1] & _ :as mals]]
   (validate-mals-count! "count" 1 mals)
@@ -179,6 +190,8 @@
    [:mal-symbol ">="] [:mal-fn mal-greater-than-or-equal]
    [:mal-symbol "atom"] [:mal-fn mal-atom]
    [:mal-symbol "atom?"] [:mal-fn mal-atom?]
+   [:mal-symbol "concat"] [:mal-fn mal-concat]
+   [:mal-symbol "cons"] [:mal-fn mal-cons]
    [:mal-symbol "count"] [:mal-fn mal-count]
    [:mal-symbol "deref"] [:mal-fn mal-deref]
    [:mal-symbol "empty?"] [:mal-fn mal-empty?]

@@ -32,7 +32,8 @@
         (try
           (println (rep input))
           (flush)
-          (catch Exception e (println "error:" (.getMessage e))))
+          (catch Exception e
+            (println "error:" (.getMessage e))))
         (recur)))))
 
 (defn -main [& args]
