@@ -136,7 +136,10 @@
   (let [expanded-tokens (if (token-is-reader-macro? (first tokens)) (expand-reader-macro tokens) tokens)]
     ((if (beginning-of-sequence expanded-tokens) read-sequence read-atom) expanded-tokens)))
 
+(defn remove-comments [tokens]
+  (filter #(not= \; (first %)) tokens))
+
 (defn read-str [s]
-  (let [tokens (tokenize s)
+  (let [tokens (-> s tokenize remove-comments)
         [_ mals] (read-form tokens)]
     mals))

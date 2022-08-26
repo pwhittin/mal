@@ -29,6 +29,7 @@
    (print-str mal true))
   ([[mal-type mal-value] print-readably]
    (case mal-type
+     :mal-atom (str "(atom " (print-str @mal-value) ")")
      :mal-false "false"
      :mal-fn "#<function>"
      :mal-fn* "#<function*>"
@@ -41,4 +42,4 @@
      :mal-symbol (mal-symbol->string mal-value)
      :mal-true "true"
      :mal-vector (mal-vector->string mal-value print-readably)
-     (throw (Exception. "unknown mal type")))))
+     (throw (Exception. (str "unknown mal type [" (pr-str mal-type) "]"))))))
