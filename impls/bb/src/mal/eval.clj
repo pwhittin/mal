@@ -131,32 +131,67 @@
     (add-bindings! let-env sequence-value)
     [value let-env]))
 
-(declare eval-mal-quasiquote)
+(declare quasiquote)
 
-(defn eval-mal-quasiquote-reduce-fn [[mal-list env] [elt-type [elt-1 elt-2 & _] :as elt]]
-  (let [is-splice-unquote? (and (= :mal-list elt-type) (= [:mal-symbol "splice-unquote"] elt-1))]
-    (if is-splice-unquote?
-      [[:mal-list [[:mal-symbol "concat"] elt-2 mal-list]] env]
-      (let [[eval-elt-value _] (eval-mal-quasiquote [elt] env)]
-        [[:mal-list [[:mal-symbol "cons"] eval-elt-value mal-list]] env]))))
+(defn mals-special-list? [special-name [mals-type mals-value :as mals]]
+  (when (= :mal-list mals-type)
+    (let [[mals-value-1 mals-value-2 & mals-value-rest] mals-value]
+      (when (= [:mal-symbol special-name] mals-value-1)
+        (when (nil? mals-value-2)
+          (throw (Exception. (str special-name ": wrong number of args (0)"))))
+        (when (seq mals-value-rest)
+          (throw (Exception. (str special-name ": wrong number of args (" (dec (count mals)) "): "
+                                  (pr-str (mapv p/print-str mals))))))
+        true))))
 
-(defn splice-unquote-list [mals env]
-  (reduce eval-mal-quasiquote-reduce-fn [[:mal-list []] env] (reverse mals)))
+(def mals-splice-unquote-list? (partial mals-special-list? "splice-unquote"))
 
-(defn quasiquote-list [[mal-1 mal-2 & _ :as mals] env]
-  (if (= [:mal-symbol "unquote"] mal-1)
-    [mal-2 env]
-    (splice-unquote-list mals env)))
+(defn mals-splice-unquote-list-value [[_ [_ elt-value-2]]]
+  elt-value-2)
 
-(defn eval-mal-quasiquote [[[mal-type mal-value :as mal] & others :as args] env]
-  (when (zero? (count args))
+(defn quasiquote-iterate [mals]
+  (if (empty? mals)
+    [:mal-list []]
+    (let [elt (first mals)
+          accumulator (quasiquote-iterate (rest mals))]
+      (if (mals-splice-unquote-list? elt)
+        [:mal-list [[:mal-symbol "concat"] (mals-splice-unquote-list-value elt) accumulator]]
+        [:mal-list [[:mal-symbol "cons"] (quasiquote [elt]) accumulator]]))))
+
+(defn mals-symbol-or-map? [[mals-type _]]
+  (#{:mal-map :mal-symbol} mals-type))
+
+(defn mals-symbol-or-map [mal]
+  [:mal-list [[:mal-symbol "quote"] mal]])
+
+(defn mals-vector? [[mals-type _]]
+  (= :mal-vector mals-type))
+
+(defn mals-vector [[_ mal-value :as mal]]
+  [:mal-list [[:mal-symbol "vec"] (quasiquote-iterate mal-value)]])
+
+(defn mals-list? [[mals-type _]]
+  (= :mal-list mals-type))
+
+(defn mals-list [[_ mals-value]]
+  (quasiquote-iterate mals-value))
+
+(def mals-unquote-list? (partial mals-special-list? "unquote"))
+
+(defn mals-unquote-list [[_ [_ mals-value-2 & _]]]
+  mals-value-2)
+
+(defn quasiquote [[mal & others :as mals]]
+  (when (zero? (count mals))
     (throw (Exception. "quasiquote: wrong number of args (0)")))
   (when (seq others)
-    (throw (Exception. (str "quasiquote: wrong number of args (" (count args) "): " (pr-str (mapv p/print-str args))))))
+    (throw (Exception. (str "quasiquote: wrong number of args (" (count mals) "): " (pr-str (mapv p/print-str mals))))))
   (cond
-    (= :mal-list mal-type) (quasiquote-list mal-value env)
-    (#{:mal-map :mal-symbol} mal-type) [[:mal-list [[:mal-symbol "quote"] mal]] nil]
-    :else [mal nil]))
+    (mals-unquote-list? mal) (mals-unquote-list mal)
+    (mals-list? mal) (mals-list mal)
+    (mals-vector? mal) (mals-vector mal)
+    (mals-symbol-or-map? mal) (mals-symbol-or-map mal)
+    :else mal))
 
 (defn eval-mal-quote [[mal & others :as args]]
   (when (seq others)
@@ -179,6 +214,7 @@
 (def mal-if [:mal-symbol "if"])
 (def mal-let* [:mal-symbol "let*"])
 (def mal-quasiquote [:mal-symbol "quasiquote"])
+(def mal-quasiquoteexpand [:mal-symbol "quasiquoteexpand"])
 (def mal-quote [:mal-symbol "quote"])
 
 (defn eval-list [[_ [mal-list-fn & mal-list-args] :as mal-list] env]
@@ -188,7 +224,10 @@
     mal-fn* (eval-mal-fn* mal-list-args env)
     mal-if (eval-mal-if mal-list-args env)
     mal-let* (eval-mal-let* mal-list-args env)
-    mal-quasiquote (eval-mal-quasiquote mal-list-args env)
+    mal-quasiquote (let [qq (quasiquote mal-list-args)]
+                     (println "qq:" (pr-str qq))
+                     [qq env])
+    mal-quasiquoteexpand [(quasiquote mal-list-args) nil]
     mal-quote (eval-mal-quote mal-list-args)
     (eval-fn mal-list env)))
 
@@ -203,3 +242,19 @@
           (if (not new-env)
             new-mal
             (recur new-mal new-env)))))))
+
+(comment
+
+  ((fn* (q) (quasiquote ((unquote q) (quote (unquote q))))) (quote (fn* (q) (quasiquote ((unquote q) (quote (unquote q)))))))
+
+  ((fn* (q) (quasiquote ((unquote q) (quote (unquote q)))))
+   (quote (fn* (q) (quasiquote ((unquote q) (quote (unquote q)))))))
+
+  ((fn* (q) (quasiquote ((unquote q) (quote (unquote q))))) (quote (fn* (q) (quasiquote ((unquote q) (quote (unquote q)))))))
+
+;; ((fn* (q) (quasiquote ((unquote q) (quote (unquote q))))) 
+  ;;  (quote (fn* (q) (quasiquote ((unquote q) (quote (unquote q)))))))
+  ;; (#<function*> (quote #<function*>))
+
+;
+  )

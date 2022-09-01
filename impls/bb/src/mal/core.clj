@@ -49,16 +49,15 @@
 
 (defn mal-concat [mals]
   (doseq [[mal-type] mals]
-    (when (not= :mal-list mal-type)
-      (throw (Exception. (str "cons: all arguments must be lists '" (p/print-str mals) "'")))))
+    (when (not (#{:mal-list :mal-vector} mal-type))
+      (throw (Exception. (str "concat: all arguments must be lists or vectors '" (p/print-str mals) "'")))))
   [:mal-list (apply concat (map second mals))])
 
 (defn mal-cons [[mal-1 [mal-type-2 mal-value-2 :as mal-2] & _ :as mals]]
   (validate-mals-count! "cons" 2 mals)
-  (when (not= :mal-list mal-type-2)
-    (throw (Exception. (str "cons: second argument must be a list '" (p/print-str mal-2) "'"))))
-  [:mal-list (cons mal-1 mal-value-2)]);;   (validate-mals-count! "quote" 1 mals)
-;;   mal-1)
+  (when (not (#{:mal-list :mal-vector} mal-type-2))
+    (throw (Exception. (str "cons: second argument must be a list or vector '" (p/print-str mal-2) "'"))))
+  [:mal-list (cons mal-1 mal-value-2)])
 
 (defn mal-count [[[mal-type-1 mal-value-1 :as mal-1] & _ :as mals]]
   (validate-mals-count! "count" 1 mals)
@@ -178,6 +177,12 @@
               (reset! mal-atom new-mal-atom-value)
               new-mal-atom-value))))
 
+(defn mal-vec [[[mal-type-1 mal-value-1 :as mal-1] :as mals]]
+  (validate-mals-count! "vec" 1 mals)
+  (when (not (#{:mal-list :mal-vector} mal-type-1))
+    (throw (Exception. (str "vec: argument must be a list or vector '" (p/print-str [:mal-list mals]) "'"))))
+  [:mal-vector mal-value-1])
+
 (def ns
   {[:mal-symbol "+"] [:mal-fn mal-add]
    [:mal-symbol "/"] [:mal-fn mal-divide]
@@ -205,4 +210,5 @@
    [:mal-symbol "reset!"] [:mal-fn mal-reset!]
    [:mal-symbol "slurp"] [:mal-fn mal-slurp]
    [:mal-symbol "str"] [:mal-fn mal-str]
-   [:mal-symbol "swap!"] [:mal-fn mal-swap!]})
+   [:mal-symbol "swap!"] [:mal-fn mal-swap!]
+   [:mal-symbol "vec"] [:mal-fn mal-vec]})

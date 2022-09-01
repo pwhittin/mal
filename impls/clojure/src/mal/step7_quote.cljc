@@ -24,27 +24,27 @@
     (let [elt (first seq)
           acc (qq-iter (rest seq))]
       (if (starts_with elt 'splice-unquote)
-        (list 'concat (second elt)     acc)
-        (list 'cons   (quasiquote elt) acc)))))
+        (list 'concat (second elt) acc)
+        (list 'cons (quasiquote elt) acc)))))
 (defn quasiquote [ast]
-  (cond (starts_with ast 'unquote)    (second ast)
-        (seq? ast)                    (qq-iter ast)
-        (vector? ast)                 (list 'vec (qq-iter ast))
+  (cond (starts_with ast 'unquote) (second ast)
+        (seq? ast) (qq-iter ast)
+        (vector? ast) (list 'vec (qq-iter ast))
         (or (symbol? ast) (map? ast)) (list 'quote ast)
-        :else                         ast))
+        :else ast))
 
 (defn eval-ast [ast env]
   (cond
     (symbol? ast) (env/env-get env ast)
 
-    (seq? ast)    (doall (map #(EVAL % env) ast))
+    (seq? ast) (doall (map #(EVAL % env) ast))
 
     (vector? ast) (vec (doall (map #(EVAL % env) ast)))
 
-    (map? ast)    (apply hash-map (doall (map #(EVAL % env)
-                                              (mapcat identity ast))))
+    (map? ast) (apply hash-map (doall (map #(EVAL % env)
+                                           (mapcat identity ast))))
 
-    :else         ast))
+    :else ast))
 
 (defn EVAL [ast env]
   (loop [ast ast
@@ -55,57 +55,57 @@
 
       ;; apply list
           ;; indented to match later steps
-          (let [[a0 a1 a2 a3] ast]
-            (condp = a0
-              nil
-              ast
+      (let [[a0 a1 a2 a3] ast]
+        (condp = a0
+          nil
+          ast
 
-              'def!
-              (env/env-set env a1 (EVAL a2 env))
+          'def!
+          (env/env-set env a1 (EVAL a2 env))
 
-              'let*
-              (let [let-env (env/env env)]
-                (doseq [[b e] (partition 2 a1)]
-                  (env/env-set let-env b (EVAL e let-env)))
-                (recur a2 let-env))
+          'let*
+          (let [let-env (env/env env)]
+            (doseq [[b e] (partition 2 a1)]
+              (env/env-set let-env b (EVAL e let-env)))
+            (recur a2 let-env))
 
-              'quote
-              a1
+          'quote
+          a1
 
-              'quasiquoteexpand
-              (quasiquote a1)
+          'quasiquoteexpand
+          (quasiquote a1)
 
-              'quasiquote
-              (recur (quasiquote a1) env)
+          'quasiquote
+          (recur (quasiquote a1) env)
 
-              'do
-              (do (eval-ast (->> ast (drop-last) (drop 1)) env)
-                  (recur (last ast) env))
+          'do
+          (do (eval-ast (->> ast (drop-last) (drop 1)) env)
+              (recur (last ast) env))
 
-              'if
-              (let [cond (EVAL a1 env)]
-                (if (or (= cond nil) (= cond false))
-                  (if (> (count ast) 2)
-                    (recur a3 env)
-                    nil)
-                  (recur a2 env)))
+          'if
+          (let [cond (EVAL a1 env)]
+            (if (or (= cond nil) (= cond false))
+              (if (> (count ast) 2)
+                (recur a3 env)
+                nil)
+              (recur a2 env)))
 
-              'fn*
-              (with-meta
-                (fn [& args]
-                  (EVAL a2 (env/env env a1 (or args '()))))
-                {:expression a2
-                 :environment env
-                 :parameters a1})
+          'fn*
+          (with-meta
+            (fn [& args]
+              (EVAL a2 (env/env env a1 (or args '()))))
+            {:expression a2
+             :environment env
+             :parameters a1})
 
               ;; apply
-              (let [el (eval-ast ast env)
-                    f (first el)
-                    args (rest el)
-                    {:keys [expression environment parameters]} (meta f)]
-                (if expression
-                  (recur expression (env/env environment parameters args))
-                  (apply f args))))))))
+          (let [el (eval-ast ast env)
+                f (first el)
+                args (rest el)
+                {:keys [expression environment parameters]} (meta f)]
+            (if expression
+              (recur expression (env/env environment parameters args))
+              (apply f args))))))))
 
 ;; print
 (defn PRINT [exp] (printer/pr-str exp))
@@ -132,7 +132,7 @@
       (when-not (re-seq #"^\s*$|^\s*;.*$" line) ; blank/comment
         (try
           (println (rep line))
-          #?(:clj  (catch Throwable e (clojure.repl/pst e))
+          #?(:clj (catch Throwable e (clojure.repl/pst e))
              :cljs (catch js/Error e (println (.-stack e))))))
       (recur))))
 
@@ -141,3 +141,12 @@
   (if args
     (rep (str "(load-file \"" (first args) "\")"))
     (repl-loop)))
+
+(comment
+
+  (-main)
+
+  (+ 1 2 3)
+
+;
+  )
